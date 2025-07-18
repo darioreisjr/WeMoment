@@ -1,9 +1,10 @@
 export interface User {
   id: string;
-  name: string;
+  firstName: string; // Mudança: nome separado em firstName e lastName
+  lastName: string;
   email: string;
   gender: 'male' | 'female';
-  avatar?: string;
+  avatar?: string; // Nova propriedade: foto em base64
   createdAt: string;
 }
 
@@ -11,6 +12,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
   partner: User | null;
+  relationshipStartDate?: string; // Nova propriedade: data de início do namoro
 }
 
 export interface Event {

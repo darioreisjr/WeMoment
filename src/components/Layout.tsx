@@ -7,6 +7,7 @@ import {
   FileText, 
   Camera, 
   Bell,
+  Settings,
   Menu,
   X,
   User,
@@ -33,6 +34,7 @@ export default function Layout({ children, currentSection, onSectionChange }: La
     { id: 'notes', label: 'Anotações', icon: FileText },
     { id: 'photos', label: 'Galeria', icon: Camera },
     { id: 'notifications', label: 'Notificações', icon: Bell },
+    { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
   const handleLogout = () => {

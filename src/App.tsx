@@ -9,6 +9,7 @@ import Wishes from './components/Wishes';
 import Notes from './components/Notes';
 import Photos from './components/Photos';
 import Notifications from './components/Notifications';
+import Settings from './components/Settings';
 
 function AppContent() {
   const { state } = useApp();
@@ -36,6 +37,8 @@ function AppContent() {
         return <Photos />;
       case 'notifications':
         return <Notifications />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard />;
     }
