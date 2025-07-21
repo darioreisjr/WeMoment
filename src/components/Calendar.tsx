@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Event } from '../types';
-import { ChevronLeft, ChevronRight, Plus, X, MapPin, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, MapPin, Calendar as CalendarIcon, Edit3, Trash2, MoreHorizontal } from 'lucide-react';
 
 export default function Calendar() {
   const { state, dispatch } = useApp();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [eventForm, setEventForm] = useState({
     title: '',
     description: '',
@@ -41,41 +44,119 @@ export default function Calendar() {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
+    setEditingEvent(null);
+    setEventForm({
+      title: '',
+      description: '',
+      location: '',
+      type: 'date',
+    });
     setShowEventModal(true);
+  };
+
+  const handleEventClick = (event: Event, e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita que o clique no evento dispare o clique na data
+    setSelectedEvent(event);
+    setShowEventDetailsModal(true);
+  };
+
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setSelectedDate(new Date(event.date));
+    setEventForm({
+      title: event.title,
+      description: event.description,
+      location: event.location || '',
+      type: event.type,
+    });
+    setShowEventDetailsModal(false);
+    setShowEventModal(true);
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este evento?')) {
+      dispatch({ type: 'DELETE_EVENT', payload: eventId });
+      
+      // Add notification
+      dispatch({
+        type: 'ADD_NOTIFICATION',
+        payload: {
+          id: Date.now().toString(),
+          title: 'Evento excluído',
+          message: `O evento foi removido do calendário`,
+          type: 'event',
+          date: new Date().toISOString(),
+          read: false,
+          createdAt: new Date().toISOString(),
+        },
+      });
+      
+      setShowEventDetailsModal(false);
+    }
   };
 
   const handleEventSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !state.auth.user) return;
 
-    const newEvent: Event = {
-      id: Date.now().toString(),
-      title: eventForm.title,
-      description: eventForm.description,
-      location: eventForm.location,
-      type: eventForm.type,
-      date: selectedDate.toISOString(),
-      createdBy: state.auth.user.id,
-      createdAt: new Date().toISOString(),
-    };
-
-    dispatch({ type: 'ADD_EVENT', payload: newEvent });
-    
-    // Add notification
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: {
-        id: Date.now().toString(),
-        title: 'Novo evento criado!',
-        message: `${eventForm.title} foi adicionado ao calendário para ${selectedDate.toLocaleDateString('pt-BR')}`,
-        type: 'event',
+    if (editingEvent) {
+      // Atualizar evento existente
+      const updatedEvent: Event = {
+        ...editingEvent,
+        title: eventForm.title,
+        description: eventForm.description,
+        location: eventForm.location,
+        type: eventForm.type,
         date: selectedDate.toISOString(),
-        read: false,
+      };
+
+      dispatch({ type: 'UPDATE_EVENT', payload: updatedEvent });
+      
+      // Add notification
+      dispatch({
+        type: 'ADD_NOTIFICATION',
+        payload: {
+          id: Date.now().toString(),
+          title: 'Evento atualizado!',
+          message: `${eventForm.title} foi atualizado com sucesso`,
+          type: 'event',
+          date: selectedDate.toISOString(),
+          read: false,
+          createdAt: new Date().toISOString(),
+        },
+      });
+    } else {
+      // Criar novo evento
+      const newEvent: Event = {
+        id: Date.now().toString(),
+        title: eventForm.title,
+        description: eventForm.description,
+        location: eventForm.location,
+        type: eventForm.type,
+        date: selectedDate.toISOString(),
+        createdBy: state.auth.user.id,
         createdAt: new Date().toISOString(),
-      },
-    });
+      };
+
+      dispatch({ type: 'ADD_EVENT', payload: newEvent });
+      
+      // Add notification
+      dispatch({
+        type: 'ADD_NOTIFICATION',
+        payload: {
+          id: Date.now().toString(),
+          title: 'Novo evento criado!',
+          message: `${eventForm.title} foi adicionado ao calendário para ${selectedDate.toLocaleDateString('pt-BR')}`,
+          type: 'event',
+          date: selectedDate.toISOString(),
+          read: false,
+          createdAt: new Date().toISOString(),
+        },
+      });
+    }
 
     setShowEventModal(false);
+    setEditingEvent(null);
     setEventForm({
       title: '',
       description: '',
@@ -107,6 +188,19 @@ export default function Calendar() {
     }
   };
 
+  const getEventTypeColorLight = (type: Event['type']) => {
+    switch (type) {
+      case 'anniversary':
+        return 'bg-rose-100 hover:bg-rose-200';
+      case 'trip':
+        return 'bg-blue-100 hover:bg-blue-200';
+      case 'date':
+        return 'bg-purple-100 hover:bg-purple-200';
+      default:
+        return 'bg-gray-100 hover:bg-gray-200';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -116,6 +210,13 @@ export default function Calendar() {
         <button
           onClick={() => {
             setSelectedDate(new Date());
+            setEditingEvent(null);
+            setEventForm({
+              title: '',
+              description: '',
+              location: '',
+              type: 'date',
+            });
             setShowEventModal(true);
           }}
           className="flex items-center px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all"
@@ -173,9 +274,11 @@ export default function Calendar() {
                   {events.slice(0, 2).map((event) => (
                     <div
                       key={event.id}
-                      className={`text-xs px-2 py-1 rounded text-white ${getEventTypeColor(event.type)}`}
+                      onClick={(e) => handleEventClick(event, e)}
+                      className={`text-xs px-2 py-1 rounded text-white cursor-pointer transition-all ${getEventTypeColor(event.type)} hover:opacity-80`}
+                      title={event.title}
                     >
-                      {event.title}
+                      {event.title.length > 12 ? `${event.title.substring(0, 12)}...` : event.title}
                     </div>
                   ))}
                   {events.length > 2 && (
@@ -190,16 +293,108 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Event Modal */}
+      {/* Event Details Modal */}
+      {showEventDetailsModal && selectedEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Detalhes do Evento</h3>
+              <button
+                onClick={() => setShowEventDetailsModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className={`px-2 py-1 text-xs rounded-full font-medium text-white ${getEventTypeColor(selectedEvent.type)}`}>
+                    {selectedEvent.type === 'anniversary' ? 'Aniversário' :
+                     selectedEvent.type === 'trip' ? 'Viagem' :
+                     selectedEvent.type === 'date' ? 'Encontro' : 'Outro'}
+                  </span>
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900">{selectedEvent.title}</h4>
+              </div>
+
+              {selectedEvent.description && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                  <p className="text-gray-600">{selectedEvent.description}</p>
+                </div>
+              )}
+
+              {selectedEvent.location && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
+                  <div className="flex items-center space-x-1">
+                    <MapPin size={16} className="text-gray-500" />
+                    <p className="text-gray-600">{selectedEvent.location}</p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                <div className="flex items-center space-x-1">
+                  <CalendarIcon size={16} className="text-gray-500" />
+                  <p className="text-gray-600">
+                    {new Date(selectedEvent.date).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                      weekday: 'long'
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Criado por</label>
+                <p className="text-gray-600">
+                  {state.auth.user?.id === selectedEvent.createdBy ? 
+                    `${state.auth.user?.firstName} ${state.auth.user?.lastName}` : 
+                    `${state.auth.partner?.firstName} ${state.auth.partner?.lastName}`
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-6">
+              <button
+                onClick={() => handleEditEvent(selectedEvent)}
+                className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all"
+              >
+                <Edit3 className="mr-2" size={16} />
+                Editar
+              </button>
+              <button
+                onClick={() => handleDeleteEvent(selectedEvent.id)}
+                className="flex-1 flex items-center justify-center px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all"
+              >
+                <Trash2 className="mr-2" size={16} />
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Event Modal (Create/Edit) */}
       {showEventModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900">
-                Novo Evento - {selectedDate?.toLocaleDateString('pt-BR')}
+                {editingEvent ? 'Editar Evento' : 'Novo Evento'} - {selectedDate?.toLocaleDateString('pt-BR')}
               </h3>
               <button
-                onClick={() => setShowEventModal(false)}
+                onClick={() => {
+                  setShowEventModal(false);
+                  setEditingEvent(null);
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X size={20} />
@@ -267,7 +462,10 @@ export default function Calendar() {
               <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowEventModal(false)}
+                  onClick={() => {
+                    setShowEventModal(false);
+                    setEditingEvent(null);
+                  }}
                   className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancelar
@@ -276,7 +474,7 @@ export default function Calendar() {
                   type="submit"
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all"
                 >
-                  Criar Evento
+                  {editingEvent ? 'Salvar Alterações' : 'Criar Evento'}
                 </button>
               </div>
             </form>
