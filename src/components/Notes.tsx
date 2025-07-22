@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { Note } from '../types';
 import { FileText, Plus, X, Edit3, Trash2, Search } from 'lucide-react';
@@ -30,6 +31,11 @@ export default function Notes() {
         updatedAt: new Date().toISOString(),
       };
       dispatch({ type: 'UPDATE_NOTE', payload: updatedNote });
+      
+      // Substituído por toast notification
+      toast.success(`Anotação "${noteForm.title}" atualizada! ✏️`, {
+        duration: 3000,
+      });
     } else {
       const newNote: Note = {
         id: Date.now().toString(),
@@ -40,6 +46,11 @@ export default function Notes() {
         updatedAt: new Date().toISOString(),
       };
       dispatch({ type: 'ADD_NOTE', payload: newNote });
+      
+      // Substituído por toast notification
+      toast.success(`Anotação "${noteForm.title}" criada! 📝`, {
+        duration: 3000,
+      });
     }
 
     setShowNoteModal(false);
@@ -59,6 +70,11 @@ export default function Notes() {
   const handleDeleteNote = (noteId: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta anotação?')) {
       dispatch({ type: 'DELETE_NOTE', payload: noteId });
+      
+      // Adicionando toast notification para exclusão
+      toast.success('Anotação excluída com sucesso! 🗑️', {
+        duration: 2000,
+      });
     }
   };
 
@@ -138,7 +154,7 @@ export default function Notes() {
               
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>
-                  Criado por {state.auth.user?.id === note.createdBy ? 'você' : state.auth.partner?.name}
+                  Criado por {state.auth.user?.id === note.createdBy ? 'você' : state.auth.partner?.firstName}
                 </span>
                 <span>{new Date(note.updatedAt).toLocaleDateString('pt-BR')}</span>
               </div>

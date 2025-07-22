@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { WishItem } from '../types';
 import { Heart, Plus, X, Check, Star, MapPin } from 'lucide-react';
@@ -30,6 +31,11 @@ export default function Wishes() {
 
     dispatch({ type: 'ADD_WISH_ITEM', payload: newWish });
     
+    // Substituído por toast notification
+    toast.success(`Desejo "${wishForm.title}" adicionado! 💕`, {
+      duration: 3000,
+    });
+    
     // Add notification
     dispatch({
       type: 'ADD_NOTIFICATION',
@@ -60,6 +66,12 @@ export default function Wishes() {
       dispatch({ type: 'UPDATE_WISH_ITEM', payload: updatedWish });
       
       if (updatedWish.completed) {
+        // Substituído por toast notification
+        toast.success(`Parabéns! Desejo "${wish.title}" realizado! 🎉`, {
+          duration: 4000,
+          icon: '🎉',
+        });
+        
         dispatch({
           type: 'ADD_NOTIFICATION',
           payload: {
@@ -71,6 +83,12 @@ export default function Wishes() {
             read: false,
             createdAt: new Date().toISOString(),
           },
+        });
+      } else {
+        // Quando desmarcar um desejo como realizado
+        toast('Desejo desmarcado como pendente', {
+          duration: 2000,
+          icon: '↩️',
         });
       }
     }
@@ -213,7 +231,13 @@ export default function Wishes() {
                     <span className="text-xl">{getCategoryIcon(wish.category)}</span>
                     <h3 className="font-semibold text-gray-900">{wish.title}</h3>
                   </div>
-                  <Check className="text-green-600" size={20} />
+                  <button
+                    onClick={() => toggleWishCompleted(wish.id)}
+                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    title="Desmarcar como realizado"
+                  >
+                    <Check className="text-green-600" size={20} />
+                  </button>
                 </div>
                 <p className="text-gray-600 text-sm mb-3">{wish.description}</p>
                 <div className="flex items-center justify-between">

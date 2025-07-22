@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { Photo } from '../types';
 import { Camera, Plus, X, Upload, Calendar, User, Trash2 } from 'lucide-react';
@@ -42,6 +43,11 @@ export default function Photos() {
 
     dispatch({ type: 'ADD_PHOTO', payload: newPhoto });
     
+    // Substituído por toast notification
+    toast.success(`Foto "${photoForm.title}" adicionada! 📸`, {
+      duration: 3000,
+    });
+    
     // Add notification
     dispatch({
       type: 'ADD_NOTIFICATION',
@@ -67,6 +73,11 @@ export default function Photos() {
   const handleDeletePhoto = (photoId: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta foto?')) {
       dispatch({ type: 'DELETE_PHOTO', payload: photoId });
+      
+      // Adicionando toast notification para exclusão
+      toast.success('Foto excluída com sucesso! 🗑️', {
+        duration: 2000,
+      });
     }
   };
 
@@ -295,8 +306,8 @@ export default function Photos() {
                   <h4 className="font-medium text-gray-900 mb-2">Adicionado por</h4>
                   <p className="text-gray-600">
                     {state.auth.user?.id === selectedPhoto.uploadedBy ? 
-                      state.auth.user?.name : 
-                      state.auth.partner?.name
+                      `${state.auth.user?.firstName} ${state.auth.user?.lastName}` : 
+                      `${state.auth.partner?.firstName} ${state.auth.partner?.lastName}`
                     }
                   </p>
                 </div>

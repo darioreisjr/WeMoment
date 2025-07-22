@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { Event } from '../types';
 import { ChevronLeft, ChevronRight, Plus, X, MapPin, Calendar as CalendarIcon, Edit3, Trash2, MoreHorizontal } from 'lucide-react';
@@ -77,6 +78,11 @@ export default function Calendar() {
     if (window.confirm('Tem certeza que deseja excluir este evento?')) {
       dispatch({ type: 'DELETE_EVENT', payload: eventId });
       
+      // Substituído por toast notification
+      toast.success('Evento excluído com sucesso! 🗑️', {
+        duration: 3000,
+      });
+      
       // Add notification
       dispatch({
         type: 'ADD_NOTIFICATION',
@@ -112,6 +118,11 @@ export default function Calendar() {
 
       dispatch({ type: 'UPDATE_EVENT', payload: updatedEvent });
       
+      // Substituído por toast notification
+      toast.success(`Evento "${eventForm.title}" atualizado! ✏️`, {
+        duration: 3000,
+      });
+      
       // Add notification
       dispatch({
         type: 'ADD_NOTIFICATION',
@@ -139,6 +150,11 @@ export default function Calendar() {
       };
 
       dispatch({ type: 'ADD_EVENT', payload: newEvent });
+      
+      // Substituído por toast notification
+      toast.success(`Evento "${eventForm.title}" criado! 📅`, {
+        duration: 3000,
+      });
       
       // Add notification
       dispatch({

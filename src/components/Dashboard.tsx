@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { Event, WishItem, Note, Photo } from '../types';
 import { Calendar, Heart, FileText, Camera, Plus, Clock, Star, X } from 'lucide-react';
@@ -118,6 +119,11 @@ export default function Dashboard() {
 
     dispatch({ type: 'ADD_EVENT', payload: newEvent });
     
+    // Substituído por toast notification
+    toast.success(`Evento "${quickEventForm.title}" criado com sucesso! 📅`, {
+      duration: 3000,
+    });
+
     dispatch({
       type: 'ADD_NOTIFICATION',
       payload: {
@@ -157,6 +163,11 @@ export default function Dashboard() {
 
     dispatch({ type: 'ADD_WISH_ITEM', payload: newWish });
     
+    // Substituído por toast notification
+    toast.success(`Desejo "${quickWishForm.title}" adicionado! 💕`, {
+      duration: 3000,
+    });
+    
     dispatch({
       type: 'ADD_NOTIFICATION',
       payload: {
@@ -192,6 +203,11 @@ export default function Dashboard() {
     };
 
     dispatch({ type: 'ADD_NOTE', payload: newNote });
+    
+    // Substituído por toast notification
+    toast.success(`Anotação "${quickNoteForm.title}" criada! 📝`, {
+      duration: 3000,
+    });
     
     dispatch({
       type: 'ADD_NOTIFICATION',
@@ -238,6 +254,11 @@ export default function Dashboard() {
 
     dispatch({ type: 'ADD_PHOTO', payload: newPhoto });
     
+    // Substituído por toast notification
+    toast.success(`Foto "${quickPhotoForm.title}" adicionada! 📸`, {
+      duration: 3000,
+    });
+    
     dispatch({
       type: 'ADD_NOTIFICATION',
       payload: {
@@ -263,7 +284,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">
-          Bem-vindos, {state.auth.user?.name} e {state.auth.partner?.name}!
+          Bem-vindos, {state.auth.user?.firstName} e {state.auth.partner?.firstName}!
         </h1>
         <p className="text-gray-600 text-lg">
           Seu espaço especial para planejar e registrar momentos únicos juntos
