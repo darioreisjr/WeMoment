@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { User } from '../types';
 import { Heart, User as UserIcon, Save } from 'lucide-react';
+import logo from './../assents/Logo.png';
+
 
 export default function ProfileSetup() {
   const { state, dispatch } = useApp();
@@ -56,8 +58,8 @@ export default function ProfileSetup() {
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center p-4">
       <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Heart className="text-white" size={32} />
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <img src={logo} alt="Logo da aplicação" />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">
             Configuração do Casal

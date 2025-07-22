@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { 
-  Home, 
-  Calendar, 
-  Heart, 
-  FileText, 
-  Camera, 
+import {
+  Home,
+  Calendar,
+  Heart,
+  FileText,
+  Camera,
   Bell,
   Settings,
   Menu,
@@ -13,6 +13,8 @@ import {
   User,
   LogOut
 } from 'lucide-react';
+import logo from './../assents/Logo.png';
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -56,8 +58,8 @@ export default function Layout({ children, currentSection, onSectionChange }: La
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
               <div className="flex items-center space-x-2 ml-2 md:ml-0">
-                <div className="w-8 h-8 bg-gradient-to-r from-rose-400 to-pink-500 rounded-full flex items-center justify-center">
-                  <Heart className="text-white" size={16} />
+                <div className="w-12 h-12 rounded-full flex items-center justify-center">
+                  <img src={logo} alt="Logo da aplicação" />
                 </div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
                   WeMoment
@@ -115,9 +117,8 @@ export default function Layout({ children, currentSection, onSectionChange }: La
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className={`${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 fixed md:static inset-y-0 left-0 z-30 w-64 bg-white/80 backdrop-blur-sm border-r border-rose-200/50 transition-transform duration-300 ease-in-out`}>
+        <aside className={`${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          } md:translate-x-0 fixed md:static inset-y-0 left-0 z-30 w-64 bg-white/80 backdrop-blur-sm border-r border-rose-200/50 transition-transform duration-300 ease-in-out`}>
           <nav className="mt-8 px-4">
             <ul className="space-y-2">
               {menuItems.map((item) => {
@@ -130,11 +131,10 @@ export default function Layout({ children, currentSection, onSectionChange }: La
                         onSectionChange(item.id);
                         setIsMobileMenuOpen(false);
                       }}
-                      className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 ${
-                        isActive
+                      className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 ${isActive
                           ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
                           : 'text-gray-700 hover:bg-rose-100'
-                      }`}
+                        }`}
                     >
                       <Icon size={20} className="mr-3" />
                       {item.label}
@@ -153,7 +153,7 @@ export default function Layout({ children, currentSection, onSectionChange }: La
 
         {/* Mobile overlay */}
         {isMobileMenuOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
             onClick={() => setIsMobileMenuOpen(false)}
           />
