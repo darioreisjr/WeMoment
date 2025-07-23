@@ -65,11 +65,19 @@ Um aplicativo web moderno e romântico desenvolvido especialmente para casais re
 - **Identificação de Autor**: Mostra claramente quem criou cada anotação
 - **Timestamps**: Data de criação e última modificação
 
-### 📸 Galeria de Fotos
+### 📸 Galeria de Fotos Avançada
 - **Upload Simulado**: Sistema de upload com fotos de demonstração para testes
 - **Descrições Detalhadas**: Título, descrição e data para cada foto
-- **Visualização Ampliada**: Modal para ver fotos em tamanho completo com detalhes
+- **Visualização Ampliada Responsiva**: Modal para ver fotos em tamanho completo com detalhes, otimizado para todos os dispositivos
+- **Sistema de Edição**: Permite editar título e descrição das fotos (data permanece imutável)
+- **Filtro por Calendário Visual**: 
+  - Calendário interativo com indicadores visuais para dias com fotos
+  - Navegação por mês com pontinhos vermelhos indicando dias com conteúdo
+  - Filtragem instantânea por data selecionada
+- **Data Automática**: Novas fotos recebem automaticamente a data atual
+- **Layout Mobile Otimizado**: Botões "Filtrar por Data" e "Adicionar Foto" adaptados para dispositivos móveis
 - **Estatísticas Temporais**: Contadores de fotos por período (mês, semana)
+- **Dados Mockup**: 10 fotos de exemplo para testes e demonstração das funcionalidades
 - **Interface de Gestão**: Possibilidade de excluir fotos com confirmação
 
 ### 🔔 Sistema de Notificações Inteligente
@@ -91,6 +99,10 @@ Um aplicativo web moderno e romântico desenvolvido especialmente para casais re
 - **Breakpoints Inteligentes**: Adaptação perfeita para tablet e desktop
 - **Touch Friendly**: Botões e elementos dimensionados adequadamente para toque
 - **Navegação Adaptativa**: Menu lateral que se transforma em overlay no mobile
+- **Layout Flexível**: Botões e controles se reorganizam automaticamente (coluna no mobile, linha no desktop)
+- **Modais Responsivos**: Formulários otimizados para toque e usabilidade
+- **Gestos Intuitivos**: Interações naturais em dispositivos móveis
+- **Performance**: Otimizações específicas para dispositivos com recursos limitados
 
 ### ✨ Micro-interações e Feedback
 - **Hover States**: Efeitos suaves ao passar o mouse para desktop
@@ -165,9 +177,9 @@ src/
 │   ├── Calendar.tsx    # Calendário interativo de eventos
 │   ├── Wishes.tsx      # Lista de desejos compartilhada
 │   ├── Notes.tsx       # Sistema de anotações
-│   ├── Photos.tsx      # Galeria de fotos
+│   ├── Photos.tsx      # Galeria de fotos avançada
 │   ├── Notifications.tsx # Central de notificações
-│   └── Settings.tsx    # Configurações avançadas (NOVO)
+│   └── Settings.tsx    # Configurações avançadas
 ├── context/            # Gerenciamento de estado global
 │   └── AppContext.tsx  # Context principal expandido
 ├── types/              # Definições TypeScript atualizadas
@@ -272,4 +284,4 @@ Este projeto é open source e está disponível sob a licença MIT, permitindo u
 
 **Desenvolvido com 💕 para casais que querem organizar e celebrar seus momentos especiais juntos!**
 
-*Versão 1.2.0 - Agora com perfis personalizados, fotos de perfil e cálculo de tempo de relacionamento*
+*Versão 1.5.0 - Agora com galeria de fotos avançada, filtro por calendário e layout mobile otimizado*
