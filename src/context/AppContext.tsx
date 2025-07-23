@@ -29,10 +29,110 @@ type Action =
   | { type: 'UPDATE_NOTE'; payload: Note }
   | { type: 'DELETE_NOTE'; payload: string }
   | { type: 'ADD_PHOTO'; payload: Photo }
+  | { type: 'UPDATE_PHOTO'; payload: Photo } // Nova action para atualizar foto
   | { type: 'DELETE_PHOTO'; payload: string }
   | { type: 'ADD_NOTIFICATION'; payload: Notification }
   | { type: 'MARK_NOTIFICATION_READ'; payload: string }
-  | { type: 'LOAD_DATA'; payload: AppState };
+  | { type: 'LOAD_DATA'; payload: AppState }
+  | { type: 'LOAD_MOCK_DATA' }; // Nova action para carregar dados mockup
+
+// Função para gerar dados mockup de fotos
+const generateMockPhotos = (): Photo[] => {
+  const mockPhotos = [
+    {
+      id: 'mock1',
+      url: 'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Nossa Primeira Viagem',
+      description: 'Que momento incrível que vivemos juntos na praia! O pôr do sol estava perfeito.',
+      date: '2025-07-15',
+      uploadedBy: 'user1',
+      createdAt: '2025-07-15T18:30:00Z',
+    },
+    {
+      id: 'mock2',
+      url: 'https://images.pexels.com/photos/1024994/pexels-photo-1024994.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Jantar Romântico',
+      description: 'Nosso primeiro encontro em um restaurante especial. A comida estava deliciosa!',
+      date: '2025-07-08',
+      uploadedBy: 'partner1',
+      createdAt: '2025-07-08T20:15:00Z',
+    },
+    {
+      id: 'mock3',
+      url: 'https://images.pexels.com/photos/1024995/pexels-photo-1024995.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Caminhada no Parque',
+      description: 'Que manhã linda explorando a natureza juntos. Os pássaros cantavam!',
+      date: '2025-07-01',
+      uploadedBy: 'user1',
+      createdAt: '2025-07-01T10:45:00Z',
+    },
+    {
+      id: 'mock4',
+      url: 'https://images.pexels.com/photos/1024996/pexels-photo-1024996.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Cinema em Casa',
+      description: 'Sessão pipoca assistindo nosso filme favorito. Que aconchego!',
+      date: '2025-06-28',
+      uploadedBy: 'partner1',
+      createdAt: '2025-06-28T21:00:00Z',
+    },
+    {
+      id: 'mock5',
+      url: 'https://images.pexels.com/photos/1024997/pexels-photo-1024997.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Café da Manhã Especial',
+      description: 'Preparamos juntos um café da manhã incrível no domingo. Panquecas deliciosas!',
+      date: '2025-06-22',
+      uploadedBy: 'user1',
+      createdAt: '2025-06-22T09:30:00Z',
+    },
+    {
+      id: 'mock6',
+      url: 'https://images.pexels.com/photos/1024998/pexels-photo-1024998.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Show de Música',
+      description: 'Que noite fantástica no show da nossa banda favorita! Cantamos muito!',
+      date: '2025-06-18',
+      uploadedBy: 'partner1',
+      createdAt: '2025-06-18T23:15:00Z',
+    },
+    {
+      id: 'mock7',
+      url: 'https://images.pexels.com/photos/1051838/pexels-photo-1051838.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Piquenique no Jardim',
+      description: 'Tarde perfeita ao ar livre com frutas, sanduíches e muito carinho.',
+      date: '2025-06-10',
+      uploadedBy: 'user1',
+      createdAt: '2025-06-10T15:20:00Z',
+    },
+    {
+      id: 'mock8',
+      url: 'https://images.pexels.com/photos/1051837/pexels-photo-1051837.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Cozinhando Juntos',
+      description: 'Experimentando uma nova receita italiana. Ficou uma delícia!',
+      date: '2025-06-05',
+      uploadedBy: 'partner1',
+      createdAt: '2025-06-05T19:45:00Z',
+    },
+    {
+      id: 'mock9',
+      url: 'https://images.pexels.com/photos/1051836/pexels-photo-1051836.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Tarde de Jogos',
+      description: 'Competição acirrada no videogame! Quem será o campeão hoje?',
+      date: '2025-05-30',
+      uploadedBy: 'user1',
+      createdAt: '2025-05-30T16:10:00Z',
+    },
+    {
+      id: 'mock10',
+      url: 'https://images.pexels.com/photos/1051835/pexels-photo-1051835.jpeg?auto=compress&cs=tinysrgb&w=800',
+      title: 'Selfie do Amor',
+      description: 'Apenas nós dois sendo felizes! Este sorriso não sai do meu rosto.',
+      date: '2025-05-25',
+      uploadedBy: 'partner1',
+      createdAt: '2025-05-25T14:22:00Z',
+    }
+  ];
+  
+  return mockPhotos;
+};
 
 const initialState: AppState = {
   auth: {
@@ -53,14 +153,14 @@ const AppContext = createContext<{
   dispatch: React.Dispatch<Action>;
 } | null>(null);
 
-// O reducer é uma função pura que recebe o estado atual e uma action,
-// e retorna um novo estado baseado na action recebida
+// Reducer function que processa todas as actions e atualiza o estado
+// É o coração do gerenciamento de estado da aplicação
 function appReducer(state: AppState, action: Action): AppState {
-  // ADICIONANDO LOG PARA DEBUG - isso nos ajuda a ver o que está acontecendo
-  console.log('🔄 Reducer executando:', action.type, action.payload);
+  console.log('🔄 Action dispatched:', action.type, action.payload);
   
   switch (action.type) {
     case 'LOGIN':
+      console.log('✅ Login realizado:', action.payload);
       return {
         ...state,
         auth: {
@@ -71,10 +171,12 @@ function appReducer(state: AppState, action: Action): AppState {
         },
       };
     case 'LOGOUT':
+      console.log('👋 Logout realizado');
       return {
         ...initialState,
       };
     case 'SET_PARTNER':
+      console.log('💕 Partner definido:', action.payload);
       return {
         ...state,
         auth: {
@@ -82,11 +184,8 @@ function appReducer(state: AppState, action: Action): AppState {
           partner: action.payload,
         },
       };
-    
-    // Novos cases para atualização de perfis
-    // Quando atualizamos um perfil, mantemos todos os outros dados do auth intactos
     case 'UPDATE_USER_PROFILE':
-      console.log('👤 Atualizando perfil do usuário:', action.payload);
+      console.log('👤 Perfil do usuário atualizado:', action.payload);
       return {
         ...state,
         auth: {
@@ -95,7 +194,7 @@ function appReducer(state: AppState, action: Action): AppState {
         },
       };
     case 'UPDATE_PARTNER_PROFILE':
-      console.log('💕 Atualizando perfil do parceiro:', action.payload);
+      console.log('👥 Perfil do parceiro atualizado:', action.payload);
       return {
         ...state,
         auth: {
@@ -103,23 +202,15 @@ function appReducer(state: AppState, action: Action): AppState {
           partner: action.payload,
         },
       };
-    
-    // CORREÇÃO CRÍTICA: Nova funcionalidade para definir data de início do namoro
-    // Esta é a parte que provavelmente estava causando o problema
     case 'SET_RELATIONSHIP_START_DATE':
-      console.log('❤️ Definindo data de início do namoro:', action.payload);
-      const newState = {
+      console.log('💝 Data de início do relacionamento definida:', action.payload);
+      return {
         ...state,
         auth: {
           ...state.auth,
-          relationshipStartDate: action.payload, // Definimos diretamente o valor
+          relationshipStartDate: action.payload,
         },
       };
-      console.log('✅ Novo estado após definir data:', newState.auth.relationshipStartDate);
-      return newState;
-    
-    // Os demais cases permanecem inalterados
-    // Eles gerenciam eventos, desejos, notas, fotos e notificações
     case 'ADD_EVENT':
       return {
         ...state,
@@ -176,10 +267,24 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         photos: [...state.photos, action.payload],
       };
+    case 'UPDATE_PHOTO':
+      console.log('📸 Foto atualizada:', action.payload);
+      return {
+        ...state,
+        photos: state.photos.map(photo =>
+          photo.id === action.payload.id ? action.payload : photo
+        ),
+      };
     case 'DELETE_PHOTO':
       return {
         ...state,
         photos: state.photos.filter(photo => photo.id !== action.payload),
+      };
+    case 'LOAD_MOCK_DATA':
+      console.log('🎭 Carregando dados mockup para testes');
+      return {
+        ...state,
+        photos: [...state.photos, ...generateMockPhotos()],
       };
     case 'ADD_NOTIFICATION':
       return {
@@ -190,7 +295,8 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         notifications: state.notifications.map(notification =>
-          notification.id === action.payload ? { ...notification, read: true } : notification
+          notification.id === action.payload ?
+            { ...notification, read: true } : notification
         ),
       };
     case 'LOAD_DATA':
@@ -230,6 +336,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } else {
       console.log('📋 Nenhum dado encontrado no localStorage');
+    }
+    
+    // Carregar dados mockup apenas se não houver fotos no localStorage
+    // Isso evita duplicar dados a cada reload
+    const existingData = savedData ? JSON.parse(savedData) : null;
+    if (!existingData || !existingData.photos || existingData.photos.length === 0) {
+      console.log('🎭 Carregando dados mockup para demonstração...');
+      dispatch({ type: 'LOAD_MOCK_DATA' });
     }
   }, []);
 
