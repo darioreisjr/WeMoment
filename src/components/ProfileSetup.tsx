@@ -4,16 +4,17 @@ import { User } from '../types';
 import { Heart, User as UserIcon, Save } from 'lucide-react';
 import logo from './../assents/Logo.png';
 
-
 export default function ProfileSetup() {
   const { state, dispatch } = useApp();
   const [step, setStep] = useState(1);
   const [userProfile, setUserProfile] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     gender: 'male' as 'male' | 'female',
   });
   const [partnerProfile, setPartnerProfile] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     gender: 'female' as 'male' | 'female',
   });
 
@@ -21,7 +22,9 @@ export default function ProfileSetup() {
     e.preventDefault();
     const updatedUser: User = {
       ...state.auth.user!,
-      name: userProfile.name,
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      name: `${userProfile.firstName} ${userProfile.lastName}`.trim(), // Mantém compatibilidade
       gender: userProfile.gender,
     };
     dispatch({ type: 'LOGIN', payload: { user: updatedUser } });
@@ -32,20 +35,25 @@ export default function ProfileSetup() {
     e.preventDefault();
     const partner: User = {
       id: '2',
-      name: partnerProfile.name,
+      firstName: partnerProfile.firstName,
+      lastName: partnerProfile.lastName,
+      name: `${partnerProfile.firstName} ${partnerProfile.lastName}`.trim(), // Mantém compatibilidade
       email: '',
       gender: partnerProfile.gender,
       createdAt: new Date().toISOString(),
     };
     dispatch({ type: 'SET_PARTNER', payload: partner });
     
-    // Add welcome notification
+    // Add welcome notification com nomes completos
+    const userName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
+    const partnerName = `${partnerProfile.firstName} ${partnerProfile.lastName}`.trim();
+    
     dispatch({
       type: 'ADD_NOTIFICATION',
       payload: {
         id: Date.now().toString(),
         title: 'Bem-vindos!',
-        message: `${userProfile.name} e ${partnerProfile.name}, que comecem os momentos especiais juntos! 💕`,
+        message: `${userName} e ${partnerName}, que comecem os momentos especiais juntos! 💕`,
         type: 'achievement',
         date: new Date().toISOString(),
         read: false,
@@ -71,18 +79,34 @@ export default function ProfileSetup() {
 
         {step === 1 ? (
           <form onSubmit={handleUserProfileSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Seu nome
-              </label>
-              <div className="relative">
-                <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            {/* Campos separados para nome e sobrenome */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome
+                </label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    value={userProfile.firstName}
+                    onChange={(e) => setUserProfile({ ...userProfile, firstName: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="Seu nome"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sobrenome
+                </label>
                 <input
                   type="text"
-                  value={userProfile.name}
-                  onChange={(e) => setUserProfile({ ...userProfile, name: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                  placeholder="Digite seu nome"
+                  value={userProfile.lastName}
+                  onChange={(e) => setUserProfile({ ...userProfile, lastName: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                  placeholder="Sobrenome"
                   required
                 />
               </div>
@@ -139,18 +163,34 @@ export default function ProfileSetup() {
           </form>
         ) : (
           <form onSubmit={handlePartnerProfileSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nome do(a) parceiro(a)
-              </label>
-              <div className="relative">
-                <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            {/* Campos separados para nome e sobrenome do parceiro */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome
+                </label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    value={partnerProfile.firstName}
+                    onChange={(e) => setPartnerProfile({ ...partnerProfile, firstName: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                    placeholder="Nome do(a) parceiro(a)"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sobrenome
+                </label>
                 <input
                   type="text"
-                  value={partnerProfile.name}
-                  onChange={(e) => setPartnerProfile({ ...partnerProfile, name: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                  placeholder="Digite o nome do(a) parceiro(a)"
+                  value={partnerProfile.lastName}
+                  onChange={(e) => setPartnerProfile({ ...partnerProfile, lastName: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                  placeholder="Sobrenome"
                   required
                 />
               </div>
@@ -198,13 +238,22 @@ export default function ProfileSetup() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 px-4 rounded-lg font-medium hover:from-rose-600 hover:to-pink-600 focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-all flex items-center justify-center"
-            >
-              <Save className="mr-2" size={20} />
-              Finalizar Configuração
-            </button>
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-all"
+              >
+                Voltar
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 px-4 rounded-lg font-medium hover:from-rose-600 hover:to-pink-600 focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-all"
+              >
+                <Save className="inline mr-2" size={16} />
+                Finalizar
+              </button>
+            </div>
           </form>
         )}
       </div>
