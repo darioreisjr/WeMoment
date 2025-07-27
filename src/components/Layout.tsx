@@ -11,7 +11,9 @@ import {
   Menu,
   X,
   User,
-  LogOut
+  LogOut,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import logo from './../assents/Logo.png';
 
@@ -25,6 +27,7 @@ export default function Layout({ children, currentSection, onSectionChange }: La
   const { state, dispatch } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const unreadNotifications = state.notifications.filter(n => !n.read).length;
 
@@ -109,9 +112,22 @@ export default function Layout({ children, currentSection, onSectionChange }: La
       </header>
 
       <div className="flex">
-        {/* Desktop Sidebar - Fixo */}
-        <aside className="hidden md:block fixed top-16 left-0 bottom-0 w-64 bg-white/80 backdrop-blur-sm border-r border-rose-200/50 z-30 overflow-y-auto">
-          <nav className="mt-8 px-4 pb-8">
+        {/* Desktop Sidebar - Agora com funcionalidade de minimizar */}
+        <aside className={`hidden md:block fixed top-16 left-0 bottom-0 bg-white/80 backdrop-blur-sm border-r border-rose-200/50 z-30 overflow-y-auto transition-all duration-300 ${
+          isSidebarCollapsed ? 'w-16' : 'w-64'
+        }`}>
+          {/* Botão para minimizar/expandir */}
+          <div className="flex justify-end p-2">
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="p-2 rounded-lg hover:bg-rose-100 transition-colors"
+              title={isSidebarCollapsed ? 'Expandir menu' : 'Minimizar menu'}
+            >
+              {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            </button>
+          </div>
+
+          <nav className={`px-2 pb-8 ${isSidebarCollapsed ? 'px-2' : 'px-4'}`}>
             <ul className="space-y-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;
@@ -120,17 +136,31 @@ export default function Layout({ children, currentSection, onSectionChange }: La
                   <li key={item.id}>
                     <button
                       onClick={() => onSectionChange(item.id)}
-                      className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 ${isActive
+                      className={`w-full flex items-center rounded-lg transition-all duration-200 ${
+                        isSidebarCollapsed ? 'px-3 py-3 justify-center relative' : 'px-4 py-3'
+                      } ${isActive
                           ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
                           : 'text-gray-700 hover:bg-rose-100'
                         }`}
+                      title={isSidebarCollapsed ? item.label : ''}
                     >
-                      <Icon size={20} className="mr-3" />
-                      {item.label}
-                      {item.id === 'notifications' && unreadNotifications > 0 && (
-                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          {unreadNotifications}
-                        </span>
+                      <div className={isSidebarCollapsed ? 'relative' : ''}>
+                        <Icon size={20} className={isSidebarCollapsed ? '' : 'mr-3'} />
+                        {isSidebarCollapsed && item.id === 'notifications' && unreadNotifications > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                            {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                          </span>
+                        )}
+                      </div>
+                      {!isSidebarCollapsed && (
+                        <>
+                          {item.label}
+                          {item.id === 'notifications' && unreadNotifications > 0 && (
+                            <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                              {unreadNotifications}
+                            </span>
+                          )}
+                        </>
                       )}
                     </button>
                   </li>
@@ -141,7 +171,8 @@ export default function Layout({ children, currentSection, onSectionChange }: La
         </aside>
 
         {/* Mobile Sidebar - Desliza de baixo para cima */}
-        <aside className={`${isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
+        <aside className={`${isMobileMenuOpen ?
+          'translate-y-0' : 'translate-y-full'
           } md:hidden fixed bottom-0 left-0 right-0 h-3/4 bg-white/95 backdrop-blur-sm border-t border-rose-200/50 z-50 transition-transform duration-300 ease-in-out rounded-t-2xl shadow-2xl overflow-y-auto`}>
           <div className="flex justify-between items-center pt-4 pb-2 px-4">
             <div className="flex justify-center flex-1">
@@ -205,8 +236,10 @@ export default function Layout({ children, currentSection, onSectionChange }: La
           />
         )}
 
-        {/* Main content */}
-        <main className="flex-1 p-6 md:p-8 md:ml-64">
+        {/* Main content - Ajusta conforme o estado do sidebar */}
+        <main className={`flex-1 p-6 md:p-8 transition-all duration-300 ${
+          isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
+        }`}>
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
