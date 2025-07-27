@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { AuthState, User, Event, WishItem, Note, Photo, Notification } from '../types';
+import { AuthState, User, Event, WishItem, Note, Photo, Notification, InviteCode } from '../types';
 
 interface AppState {
   auth: AuthState;
@@ -8,17 +8,19 @@ interface AppState {
   notes: Note[];
   photos: Photo[];
   notifications: Notification[];
+  inviteCodes: InviteCode[];
 }
 
-// Expandimos as Actions para incluir as novas funcionalidades
-// Cada action representa uma operação específica que pode modificar o estado da aplicação
 type Action = 
   | { type: 'LOGIN'; payload: { user: User; partner?: User } }
   | { type: 'LOGOUT' }
   | { type: 'SET_PARTNER'; payload: User }
   | { type: 'UPDATE_USER_PROFILE'; payload: User }
   | { type: 'UPDATE_PARTNER_PROFILE'; payload: User }
-  | { type: 'SET_RELATIONSHIP_START_DATE'; payload: string } // Nova action para data de namoro
+  | { type: 'SET_RELATIONSHIP_START_DATE'; payload: string }
+  | { type: 'GENERATE_INVITE_CODE'; payload: InviteCode }
+  | { type: 'USE_INVITE_CODE'; payload: { code: string; user: User } }
+  | { type: 'INVALIDATE_INVITE_CODE'; payload: string }
   | { type: 'ADD_EVENT'; payload: Event }
   | { type: 'UPDATE_EVENT'; payload: Event }
   | { type: 'DELETE_EVENT'; payload: string }
@@ -29,14 +31,18 @@ type Action =
   | { type: 'UPDATE_NOTE'; payload: Note }
   | { type: 'DELETE_NOTE'; payload: string }
   | { type: 'ADD_PHOTO'; payload: Photo }
-  | { type: 'UPDATE_PHOTO'; payload: Photo } // Nova action para atualizar foto
+  | { type: 'UPDATE_PHOTO'; payload: Photo }
   | { type: 'DELETE_PHOTO'; payload: string }
   | { type: 'ADD_NOTIFICATION'; payload: Notification }
   | { type: 'MARK_NOTIFICATION_READ'; payload: string }
   | { type: 'LOAD_DATA'; payload: AppState }
-  | { type: 'LOAD_MOCK_DATA' }; // Nova action para carregar dados mockup
+  | { type: 'LOAD_MOCK_DATA' };
 
-// Função para gerar dados mockup de fotos
+// Função para gerar código de convite único
+const generateInviteCode = (): string => {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+};
+
 const generateMockPhotos = (): Photo[] => {
   const mockPhotos = [
     {
@@ -62,75 +68,11 @@ const generateMockPhotos = (): Photo[] => {
       url: 'https://images.pexels.com/photos/1024995/pexels-photo-1024995.jpeg?auto=compress&cs=tinysrgb&w=800',
       title: 'Caminhada no Parque',
       description: 'Que manhã linda explorando a natureza juntos. Os pássaros cantavam!',
-      date: '2025-07-01',
+      date: '2025-06-20',
       uploadedBy: 'user1',
-      createdAt: '2025-07-01T10:45:00Z',
-    },
-    {
-      id: 'mock4',
-      url: 'https://images.pexels.com/photos/1024996/pexels-photo-1024996.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Cinema em Casa',
-      description: 'Sessão pipoca assistindo nosso filme favorito. Que aconchego!',
-      date: '2025-06-28',
-      uploadedBy: 'partner1',
-      createdAt: '2025-06-28T21:00:00Z',
-    },
-    {
-      id: 'mock5',
-      url: 'https://images.pexels.com/photos/1024997/pexels-photo-1024997.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Café da Manhã Especial',
-      description: 'Preparamos juntos um café da manhã incrível no domingo. Panquecas deliciosas!',
-      date: '2025-06-22',
-      uploadedBy: 'user1',
-      createdAt: '2025-06-22T09:30:00Z',
-    },
-    {
-      id: 'mock6',
-      url: 'https://images.pexels.com/photos/1024998/pexels-photo-1024998.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Show de Música',
-      description: 'Que noite fantástica no show da nossa banda favorita! Cantamos muito!',
-      date: '2025-06-18',
-      uploadedBy: 'partner1',
-      createdAt: '2025-06-18T23:15:00Z',
-    },
-    {
-      id: 'mock7',
-      url: 'https://images.pexels.com/photos/1051838/pexels-photo-1051838.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Piquenique no Jardim',
-      description: 'Tarde perfeita ao ar livre com frutas, sanduíches e muito carinho.',
-      date: '2025-06-10',
-      uploadedBy: 'user1',
-      createdAt: '2025-06-10T15:20:00Z',
-    },
-    {
-      id: 'mock8',
-      url: 'https://images.pexels.com/photos/1051837/pexels-photo-1051837.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Cozinhando Juntos',
-      description: 'Experimentando uma nova receita italiana. Ficou uma delícia!',
-      date: '2025-06-05',
-      uploadedBy: 'partner1',
-      createdAt: '2025-06-05T19:45:00Z',
-    },
-    {
-      id: 'mock9',
-      url: 'https://images.pexels.com/photos/1051836/pexels-photo-1051836.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Tarde de Jogos',
-      description: 'Competição acirrada no videogame! Quem será o campeão hoje?',
-      date: '2025-05-30',
-      uploadedBy: 'user1',
-      createdAt: '2025-05-30T16:10:00Z',
-    },
-    {
-      id: 'mock10',
-      url: 'https://images.pexels.com/photos/1051835/pexels-photo-1051835.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Selfie do Amor',
-      description: 'Apenas nós dois sendo felizes! Este sorriso não sai do meu rosto.',
-      date: '2025-05-25',
-      uploadedBy: 'partner1',
-      createdAt: '2025-05-25T14:22:00Z',
+      createdAt: '2025-06-20T08:45:00Z',
     }
   ];
-  
   return mockPhotos;
 };
 
@@ -139,13 +81,16 @@ const initialState: AppState = {
     isAuthenticated: false,
     user: null,
     partner: null,
-    relationshipStartDate: undefined, // Inicializamos explicitamente como undefined
+    relationshipStartDate: undefined,
+    inviteCode: undefined,
+    isCoupleFull: false,
   },
   events: [],
   wishItems: [],
   notes: [],
   photos: [],
   notifications: [],
+  inviteCodes: [],
 };
 
 const AppContext = createContext<{
@@ -153,21 +98,22 @@ const AppContext = createContext<{
   dispatch: React.Dispatch<Action>;
 } | null>(null);
 
-// Reducer function que processa todas as actions e atualiza o estado
-// É o coração do gerenciamento de estado da aplicação
 function appReducer(state: AppState, action: Action): AppState {
   console.log('🔄 Action dispatched:', action.type, action.payload);
   
   switch (action.type) {
     case 'LOGIN':
       console.log('✅ Login realizado:', action.payload);
+      const isCoupleFull = !!(action.payload.user && action.payload.partner);
       return {
         ...state,
         auth: {
           isAuthenticated: true,
           user: action.payload.user,
           partner: action.payload.partner || null,
-          relationshipStartDate: state.auth.relationshipStartDate, // Preservamos a data existente
+          relationshipStartDate: state.auth.relationshipStartDate,
+          inviteCode: state.auth.inviteCode,
+          isCoupleFull,
         },
       };
     case 'LOGOUT':
@@ -182,6 +128,7 @@ function appReducer(state: AppState, action: Action): AppState {
         auth: {
           ...state.auth,
           partner: action.payload,
+          isCoupleFull: true, // Quando adiciona parceiro, marca como completo
         },
       };
     case 'UPDATE_USER_PROFILE':
@@ -210,6 +157,42 @@ function appReducer(state: AppState, action: Action): AppState {
           ...state.auth,
           relationshipStartDate: action.payload,
         },
+      };
+    case 'GENERATE_INVITE_CODE':
+      console.log('🔗 Código de convite gerado:', action.payload);
+      return {
+        ...state,
+        auth: {
+          ...state.auth,
+          inviteCode: action.payload.code,
+        },
+        inviteCodes: [...state.inviteCodes, action.payload],
+      };
+    case 'USE_INVITE_CODE':
+      console.log('✅ Código de convite usado:', action.payload);
+      const updatedCodes = state.inviteCodes.map(code =>
+        code.code === action.payload.code
+          ? { ...code, used: true, usedBy: action.payload.user.id, usedAt: new Date().toISOString() }
+          : code
+      );
+      return {
+        ...state,
+        auth: {
+          ...state.auth,
+          partner: action.payload.user,
+          isCoupleFull: true,
+        },
+        inviteCodes: updatedCodes,
+      };
+    case 'INVALIDATE_INVITE_CODE':
+      console.log('❌ Código de convite invalidado:', action.payload);
+      return {
+        ...state,
+        auth: {
+          ...state.auth,
+          inviteCode: undefined,
+        },
+        inviteCodes: state.inviteCodes.filter(code => code.code !== action.payload),
       };
     case 'ADD_EVENT':
       return {
@@ -268,7 +251,6 @@ function appReducer(state: AppState, action: Action): AppState {
         photos: [...state.photos, action.payload],
       };
     case 'UPDATE_PHOTO':
-      console.log('📸 Foto atualizada:', action.payload);
       return {
         ...state,
         photos: state.photos.map(photo =>
@@ -280,12 +262,6 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         photos: state.photos.filter(photo => photo.id !== action.payload),
       };
-    case 'LOAD_MOCK_DATA':
-      console.log('🎭 Carregando dados mockup para testes');
-      return {
-        ...state,
-        photos: [...state.photos, ...generateMockPhotos()],
-      };
     case 'ADD_NOTIFICATION':
       return {
         ...state,
@@ -295,19 +271,25 @@ function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         notifications: state.notifications.map(notification =>
-          notification.id === action.payload ?
-            { ...notification, read: true } : notification
+          notification.id === action.payload
+            ? { ...notification, read: true }
+            : notification
         ),
       };
     case 'LOAD_DATA':
       console.log('📥 Carregando dados do localStorage:', action.payload);
-      // CORREÇÃO IMPORTANTE: Garantimos que a relationshipStartDate seja preservada
       return {
         ...action.payload,
         auth: {
           ...action.payload.auth,
           relationshipStartDate: action.payload.auth.relationshipStartDate || undefined,
+          isCoupleFull: !!(action.payload.auth.user && action.payload.auth.partner),
         },
+      };
+    case 'LOAD_MOCK_DATA':
+      return {
+        ...state,
+        photos: generateMockPhotos(),
       };
     default:
       console.log('⚠️ Action não reconhecida:', action.type);
@@ -315,13 +297,9 @@ function appReducer(state: AppState, action: Action): AppState {
   }
 }
 
-// O Provider é um componente que disponibiliza o estado e dispatch para toda a aplicação
-// É uma implementação do padrão Context API do React para gerenciamento de estado global
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Effect para carregar dados do localStorage na inicialização
-  // Isso permite que os dados persistam entre sessões do usuário
   useEffect(() => {
     console.log('🔄 Tentando carregar dados do localStorage...');
     const savedData = localStorage.getItem('couples-app-data');
@@ -332,14 +310,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'LOAD_DATA', payload: parsedData });
       } catch (error) {
         console.error('❌ Erro ao carregar dados do localStorage:', error);
-        // Se houver erro ao carregar dados, não fazemos nada - o app inicia limpo
       }
     } else {
       console.log('📋 Nenhum dado encontrado no localStorage');
     }
     
-    // Carregar dados mockup apenas se não houver fotos no localStorage
-    // Isso evita duplicar dados a cada reload
     const existingData = savedData ? JSON.parse(savedData) : null;
     if (!existingData || !existingData.photos || existingData.photos.length === 0) {
       console.log('🎭 Carregando dados mockup para demonstração...');
@@ -347,12 +322,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Effect para salvar dados no localStorage sempre que o estado mudar
-  // Isso garante que as alterações sejam persistidas automaticamente
   useEffect(() => {
     console.log('💾 Salvando estado atual no localStorage:', state);
-    // CORREÇÃO: Salvamos sempre que há mudanças, não apenas quando autenticado
-    // Isso garante que a data de relacionamento seja sempre persistida
     try {
       localStorage.setItem('couples-app-data', JSON.stringify(state));
       console.log('✅ Dados salvos com sucesso no localStorage');
@@ -368,8 +339,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook customizado para usar o contexto da aplicação
-// Fornece type safety e um erro claro se usado fora do Provider
 export function useApp() {
   const context = useContext(AppContext);
   if (!context) {
