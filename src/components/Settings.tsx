@@ -57,12 +57,18 @@ export default function SettingsComponent() {
 
   const [relationshipDateError, setRelationshipDateError] = useState('');
 
+  // Função auxiliar para criar data local a partir de string YYYY-MM-DD
+  const createLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month é 0-indexed
+  };
+
   // Função para validar idade mínima de 18 anos
   const validateAge = (dateOfBirth: string): boolean => {
     if (!dateOfBirth) return true; // Permite vazio
     
     const today = new Date();
-    const birthDate = new Date(dateOfBirth);
+    const birthDate = createLocalDate(dateOfBirth);
     const age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
     
@@ -100,7 +106,7 @@ export default function SettingsComponent() {
   const validateRelationshipDate = (date: string): boolean => {
     if (!date) return true; // Permite vazio
     
-    const selectedDate = new Date(date);
+    const selectedDate = createLocalDate(date);
     const today = new Date();
     today.setHours(23, 59, 59, 999); // Final do dia atual
     
@@ -289,7 +295,7 @@ export default function SettingsComponent() {
   const calculateRelationshipDuration = () => {
     if (!state.auth.relationshipStartDate) return null;
     
-    const start = new Date(state.auth.relationshipStartDate);
+    const start = createLocalDate(state.auth.relationshipStartDate);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -304,6 +310,28 @@ export default function SettingsComponent() {
     } else {
       return `${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
     }
+  };
+
+  // Função auxiliar para formatar datas para exibição
+  const formatDateForDisplay = (dateString: string): string => {
+    if (!dateString) return '';
+    const date = createLocalDate(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  // Função auxiliar para formatar datas para exibição longa
+  const formatDateLongForDisplay = (dateString: string): string => {
+    if (!dateString) return '';
+    const date = createLocalDate(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
   const handleSave = () => {
@@ -667,11 +695,7 @@ export default function SettingsComponent() {
                   <Calendar size={16} className="mr-2" />
                   <span>
                     {userForm.dateOfBirth 
-                      ? new Date(userForm.dateOfBirth).toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })
+                      ? formatDateForDisplay(userForm.dateOfBirth)
                       : 'Data de nascimento não informada'
                     }
                   </span>
@@ -778,11 +802,7 @@ export default function SettingsComponent() {
                   <Calendar size={16} className="mr-2" />
                   <span>
                     {partnerForm.dateOfBirth 
-                      ? new Date(partnerForm.dateOfBirth).toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })
+                      ? formatDateForDisplay(partnerForm.dateOfBirth)
                       : 'Data de nascimento não informada'
                     }
                   </span>
@@ -818,11 +838,7 @@ export default function SettingsComponent() {
                 <div>
                   <p className="text-gray-900">
                     {state.auth.relationshipStartDate 
-                      ? new Date(state.auth.relationshipStartDate).toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric',
-                        })
+                      ? formatDateLongForDisplay(state.auth.relationshipStartDate)
                       : 'Data não definida'
                     }
                   </p>
