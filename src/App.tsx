@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
+import { Analytics } from '@vercel/analytics/react';
 import { AppProvider, useApp } from './context/AppContext';
 import Layout from './components/Layout';
 import Login from './components/Login';
@@ -88,6 +89,7 @@ function App() {
           },
         }}
       />
+      <Analytics />
     </AppProvider>
   );
 }
