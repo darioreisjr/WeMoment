@@ -7,30 +7,43 @@ import Login from './components/Login';
 import ProfileSetup from './components/ProfileSetup';
 import Dashboard from './components/Dashboard';
 import Calendar from './components/Calendar';
+import Travels from './components/Travels';  // Nova importação para o componente de viagens
 import Wishes from './components/Wishes';
 import Notes from './components/Notes';
 import Photos from './components/Photos';
 import Notifications from './components/Notifications';
 import Settings from './components/Settings';
 
+/**
+ * Componente principal da aplicação com roteamento por seções
+ * Gerencia a navegação entre diferentes funcionalidades do app
+ */
 function AppContent() {
   const { state } = useApp();
   const [currentSection, setCurrentSection] = useState('dashboard');
 
+  // Redireciona para login se não estiver autenticado
   if (!state.auth.isAuthenticated) {
     return <Login />;
   }
 
+  // Redireciona para configuração de perfil se não há parceiro cadastrado
   if (!state.auth.partner) {
     return <ProfileSetup />;
   }
 
+  /**
+   * Renderiza o componente apropriado baseado na seção atual
+   * Inclui a nova seção 'travels' para o organizador de viagens
+   */
   const renderSection = () => {
     switch (currentSection) {
       case 'dashboard':
         return <Dashboard />;
       case 'calendar':
         return <Calendar />;
+      case 'travels':        // Nova seção de viagens
+        return <Travels />;
       case 'wishes':
         return <Wishes />;
       case 'notes':
@@ -53,10 +66,16 @@ function AppContent() {
   );
 }
 
+/**
+ * Componente raiz da aplicação com providers e configurações globais
+ * Inclui configuração de toasts, analytics e contexto global
+ */
 function App() {
   return (
     <AppProvider>
       <AppContent />
+      
+      {/* Configuração de Toast Notifications */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -89,6 +108,8 @@ function App() {
           },
         }}
       />
+      
+      {/* Analytics do Vercel */}
       <Analytics />
     </AppProvider>
   );

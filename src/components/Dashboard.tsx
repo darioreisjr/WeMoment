@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { Event, WishItem, Note, Photo } from '../types';
-import { Calendar, Heart, FileText, Camera, Plus, Clock, Star, X } from 'lucide-react';
+import { Calendar, Heart, FileText, Camera, Plus, Clock, Star, X, Plane, MapPin } from 'lucide-react';
 
 export default function Dashboard() {
   const { state, dispatch } = useApp();
@@ -57,6 +57,28 @@ export default function Dashboard() {
            eventDate.getMonth() + 1 === selectedMonth;
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+  // ========== ESTATÍSTICAS DE VIAGENS ==========
+  const getTravelStatus = (travel: any) => {
+    const today = new Date();
+    const startDate = new Date(travel.startDate);
+    const endDate = new Date(travel.endDate);
+    
+    if (today < startDate) return 'upcoming';
+    if (today >= startDate && today <= endDate) return 'ongoing';
+    return 'completed';
+  };
+
+  const upcomingTravels = state.travels.filter(travel => getTravelStatus(travel) === 'upcoming');
+  const ongoingTravels = state.travels.filter(travel => getTravelStatus(travel) === 'ongoing');
+  const completedTravels = state.travels.filter(travel => getTravelStatus(travel) === 'completed');
+
+  // Próxima viagem
+  const nextTravel = upcomingTravels
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
+
+  // Viagem atual (se houver)
+  const currentTravel = ongoingTravels[0];
+
   // Gerar opções de anos (últimos 2 anos + próximos 3 anos)
   const currentYear = new Date().getFullYear();
   const yearOptions = [];
@@ -71,244 +93,240 @@ export default function Dashboard() {
 
   const recentPhotos = state.photos
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 4);
+    .slice(0, 6);
 
-  const completedWishes = state.wishItems.filter(item => item.completed).length;
-  const totalWishes = state.wishItems.length;
+  const priorityWishes = state.wishItems
+    .filter(wish => !wish.completed && wish.priority === 'high')
+    .slice(0, 3);
 
-  const stats = [
-    {
-      label: 'Eventos Marcados',
-      value: state.events.length,
-      icon: Calendar,
-      color: 'from-blue-500 to-blue-600',
-    },
-    {
-      label: 'Desejos Realizados',
-      value: `${completedWishes}/${totalWishes}`,
-      icon: Heart,
-      color: 'from-rose-500 to-pink-500',
-    },
-    {
-      label: 'Anotações',
-      value: state.notes.length,
-      icon: FileText,
-      color: 'from-purple-500 to-purple-600',
-    },
-    {
-      label: 'Fotos',
-      value: state.photos.length,
-      icon: Camera,
-      color: 'from-emerald-500 to-emerald-600',
-    },
-  ];
+  const recentNotes = state.notes
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 3);
 
-  const handleQuickEventSubmit = (e: React.FormEvent) => {
+  // Cálculo do tempo de relacionamento
+  const getRelationshipTime = () => {
+    if (!state.auth.relationshipStartDate) return null;
+    
+    const start = new Date(state.auth.relationshipStartDate);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    const days = diffDays % 30;
+    
+    return { years, months, days, totalDays: diffDays };
+  };
+
+  const relationshipTime = getRelationshipTime();
+
+  // Quick Actions Handlers
+  const handleQuickEvent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!state.auth.user) return;
+    if (!quickEventForm.title.trim()) {
+      toast.error('Título é obrigatório!');
+      return;
+    }
 
     const newEvent: Event = {
       id: Date.now().toString(),
-      title: quickEventForm.title,
-      description: quickEventForm.description,
-      date: new Date(quickEventForm.date).toISOString(),
+      title: quickEventForm.title.trim(),
+      description: quickEventForm.description.trim(),
+      date: quickEventForm.date,
       type: quickEventForm.type,
-      createdBy: state.auth.user.id,
+      createdBy: state.auth.user?.id || '',
       createdAt: new Date().toISOString(),
     };
 
     dispatch({ type: 'ADD_EVENT', payload: newEvent });
-    
-    // Substituído por toast notification
-    toast.success(`Evento "${quickEventForm.title}" criado com sucesso! 📅`, {
-      duration: 3000,
-    });
-
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: {
-        id: Date.now().toString(),
-        title: 'Evento criado rapidamente!',
-        message: `${quickEventForm.title} foi adicionado ao calendário`,
-        type: 'event',
-        date: new Date().toISOString(),
-        read: false,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    setShowQuickEventModal(false);
+    toast.success('Evento adicionado!');
     setQuickEventForm({
       title: '',
       description: '',
       date: new Date().toISOString().split('T')[0],
       type: 'date',
     });
+    setShowQuickEventModal(false);
   };
 
-  const handleQuickWishSubmit = (e: React.FormEvent) => {
+  const handleQuickWish = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!state.auth.user) return;
+    if (!quickWishForm.title.trim()) {
+      toast.error('Título é obrigatório!');
+      return;
+    }
 
     const newWish: WishItem = {
       id: Date.now().toString(),
-      title: quickWishForm.title,
+      title: quickWishForm.title.trim(),
       description: '',
       category: quickWishForm.category,
       priority: quickWishForm.priority,
       completed: false,
-      createdBy: state.auth.user.id,
+      createdBy: state.auth.user?.id || '',
       createdAt: new Date().toISOString(),
     };
 
     dispatch({ type: 'ADD_WISH_ITEM', payload: newWish });
-    
-    // Substituído por toast notification
-    toast.success(`Desejo "${quickWishForm.title}" adicionado! 💕`, {
-      duration: 3000,
-    });
-    
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: {
-        id: Date.now().toString(),
-        title: 'Desejo adicionado rapidamente!',
-        message: `"${quickWishForm.title}" foi adicionado à lista de desejos`,
-        type: 'achievement',
-        date: new Date().toISOString(),
-        read: false,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    setShowQuickWishModal(false);
+    toast.success('Desejo adicionado!');
     setQuickWishForm({
       title: '',
       category: 'activity',
       priority: 'medium',
     });
+    setShowQuickWishModal(false);
   };
 
-  const handleQuickNoteSubmit = (e: React.FormEvent) => {
+  const handleQuickNote = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!state.auth.user) return;
+    if (!quickNoteForm.title.trim()) {
+      toast.error('Título é obrigatório!');
+      return;
+    }
 
     const newNote: Note = {
       id: Date.now().toString(),
-      title: quickNoteForm.title,
-      content: quickNoteForm.content,
-      createdBy: state.auth.user.id,
+      title: quickNoteForm.title.trim(),
+      content: quickNoteForm.content.trim(),
+      createdBy: state.auth.user?.id || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     dispatch({ type: 'ADD_NOTE', payload: newNote });
-    
-    // Substituído por toast notification
-    toast.success(`Anotação "${quickNoteForm.title}" criada! 📝`, {
-      duration: 3000,
-    });
-    
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: {
-        id: Date.now().toString(),
-        title: 'Anotação criada rapidamente!',
-        message: `"${quickNoteForm.title}" foi adicionada às anotações`,
-        type: 'achievement',
-        date: new Date().toISOString(),
-        read: false,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    setShowQuickNoteModal(false);
+    toast.success('Anotação criada!');
     setQuickNoteForm({
       title: '',
       content: '',
     });
+    setShowQuickNoteModal(false);
   };
 
-  const handleQuickPhotoSubmit = (e: React.FormEvent) => {
+  const handleQuickPhoto = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!state.auth.user) return;
+    if (!quickPhotoForm.title.trim()) {
+      toast.error('Título é obrigatório!');
+      return;
+    }
 
-    const mockPhotos = [
-      'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1024994/pexels-photo-1024994.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1024995/pexels-photo-1024995.jpeg?auto=compress&cs=tinysrgb&w=800',
-      'https://images.pexels.com/photos/1024996/pexels-photo-1024996.jpeg?auto=compress&cs=tinysrgb&w=800',
-    ];
-
-    const randomPhoto = mockPhotos[Math.floor(Math.random() * mockPhotos.length)];
+    // Simular upload de foto
+    const mockPhotoUrl = `https://images.pexels.com/photos/${Math.floor(Math.random() * 1000000)}/pexels-photo.jpeg?auto=compress&cs=tinysrgb&w=800`;
 
     const newPhoto: Photo = {
       id: Date.now().toString(),
-      url: randomPhoto,
-      title: quickPhotoForm.title,
-      description: quickPhotoForm.description,
-      date: new Date().toISOString(),
-      uploadedBy: state.auth.user.id,
+      url: mockPhotoUrl,
+      title: quickPhotoForm.title.trim(),
+      description: quickPhotoForm.description.trim(),
+      date: new Date().toISOString().split('T')[0],
+      uploadedBy: state.auth.user?.id || '',
       createdAt: new Date().toISOString(),
     };
 
     dispatch({ type: 'ADD_PHOTO', payload: newPhoto });
-    
-    // Substituído por toast notification
-    toast.success(`Foto "${quickPhotoForm.title}" adicionada! 📸`, {
-      duration: 3000,
-    });
-    
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: {
-        id: Date.now().toString(),
-        title: 'Foto adicionada rapidamente!',
-        message: `"${quickPhotoForm.title}" foi adicionada à galeria`,
-        type: 'achievement',
-        date: new Date().toISOString(),
-        read: false,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    setShowQuickPhotoModal(false);
+    toast.success('Foto adicionada!');
     setQuickPhotoForm({
       title: '',
       description: '',
     });
+    setShowQuickPhotoModal(false);
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">
-          Bem-vindos, {state.auth.user?.firstName} e {state.auth.partner?.firstName}!
-        </h1>
-        <p className="text-gray-600 text-lg">
-          Seu espaço especial para planejar e registrar momentos únicos juntos
-        </p>
+    <div className="space-y-6">
+      {/* Welcome Header */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-2">
+              Bem-vindos, {state.auth.user?.firstName || state.auth.user?.name} e {state.auth.partner?.firstName || state.auth.partner?.name}
+            </h1>
+            <p className="text-gray-600">
+              Seu espaço especial para planejar e registrar momentos únicos juntos
+            </p>
+            {relationshipTime && (
+              <p className="text-sm text-gray-500 mt-1">
+                Juntos há {relationshipTime.years > 0 && `${relationshipTime.years} ano${relationshipTime.years > 1 ? 's' : ''}`}
+                {relationshipTime.months > 0 && ` ${relationshipTime.months} mes${relationshipTime.months > 1 ? 'es' : ''}`}
+                {relationshipTime.days > 0 && ` ${relationshipTime.days} dia${relationshipTime.days > 1 ? 's' : ''}`}
+                {` (${relationshipTime.totalDays} dias) 🎉`}
+              </p>
+            )}
+          </div>
+          
+          {/* Current or Next Travel Info */}
+          {(currentTravel || nextTravel) && (
+            <div className="mt-4 sm:mt-0 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4">
+              {currentTravel ? (
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Plane className="text-blue-600 mr-2" size={20} />
+                    <span className="font-medium text-blue-900">Viagem Atual</span>
+                  </div>
+                  <p className="font-bold text-blue-900">{currentTravel.name}</p>
+                  <p className="text-sm text-blue-700">{currentTravel.destination}</p>
+                </div>
+              ) : nextTravel && (
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Plane className="text-purple-600 mr-2" size={20} />
+                    <span className="font-medium text-purple-900">Próxima Viagem</span>
+                  </div>
+                  <p className="font-bold text-purple-900">{nextTravel.name}</p>
+                  <p className="text-sm text-purple-700">{nextTravel.destination}</p>
+                  <p className="text-xs text-purple-600 mt-1">
+                    {new Date(nextTravel.startDate).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                </div>
-                <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${stat.color} flex items-center justify-center`}>
-                  <Icon className="text-white" size={24} />
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/20 text-center">
+          <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+            {state.events.length}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Eventos</div>
+        </div>
+        
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/20 text-center">
+          <div className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+            {state.wishItems.length}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Desejos</div>
+        </div>
+        
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/20 text-center">
+          <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+            {state.notes.length}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Anotações</div>
+        </div>
+        
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/20 text-center">
+          <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
+            {state.photos.length}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Fotos</div>
+        </div>
+
+        {/* Nova estatística de viagens */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/20 text-center">
+          <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-800 bg-clip-text text-transparent">
+            {state.travels.length}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Viagens</div>
+        </div>
+
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/20 text-center">
+          <div className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+            {completedTravels.length}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">Realizadas</div>
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -412,384 +430,487 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Events Filter */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Filtrar Eventos</h2>
-          <Calendar className="text-gray-500" size={20} />
+      {/* Upcoming Travels Section */}
+      {upcomingTravels.length > 0 && (
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900">Próximas Viagens</h2>
+            <Plane className="text-gray-500" size={20} />
+          </div>
+          
+          <div className="space-y-3">
+            {upcomingTravels.slice(0, 3).map((travel) => (
+              <div key={travel.id} className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">{travel.name}</h3>
+                  <div className="flex items-center text-sm text-gray-600 mt-1">
+                    <MapPin size={14} className="mr-1" />
+                    {travel.destination}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(travel.startDate).toLocaleDateString('pt-BR')} - {new Date(travel.endDate).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+                <div className="w-3 h-3 rounded-full bg-blue-500" />
+              </div>
+            ))}
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ano
-            </label>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Calendar Filter */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Eventos por Período</h2>
+          
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
             >
               {yearOptions.map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mês
-            </label>
+            
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
             >
               {monthNames.map((month, index) => (
                 <option key={index + 1} value={index + 1}>{month}</option>
               ))}
             </select>
           </div>
+
+          {filteredEvents.length === 0 ? (
+            <p className="text-gray-500 text-center py-6">
+              Nenhum evento em {monthNames[selectedMonth - 1]} de {selectedYear}.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {filteredEvents.map((event) => (
+                <div key={event.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">{event.title}</h4>
+                    <p className="text-sm text-gray-600">{event.description}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(event.date).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className={`w-2 h-2 rounded-full ${
+                    event.type === 'anniversary' ? 'bg-rose-500' :
+                    event.type === 'trip' ? 'bg-blue-500' :
+                    event.type === 'date' ? 'bg-purple-500' : 'bg-gray-500'
+                  }`} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {filteredEvents.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            Nenhum evento encontrado para {monthNames[selectedMonth - 1]} de {selectedYear}
-          </p>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600 mb-3">
-              {filteredEvents.length} evento{filteredEvents.length !== 1 ? 's' : ''} em {monthNames[selectedMonth - 1]} de {selectedYear}
+        {/* Priority Wishes */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Desejos Prioritários</h2>
+          
+          {priorityWishes.length === 0 ? (
+            <p className="text-gray-500 text-center py-6">
+              Nenhum desejo de alta prioridade no momento.
             </p>
-            {filteredEvents.map((event) => (
-              <div key={event.id} className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <h3 className="font-semibold text-gray-900">{event.title}</h3>
-                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      event.type === 'anniversary' ? 'bg-rose-100 text-rose-800' :
-                      event.type === 'trip' ? 'bg-blue-100 text-blue-800' :
-                      event.type === 'date' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {event.type === 'anniversary' ? 'Aniversário' :
-                       event.type === 'trip' ? 'Viagem' :
-                       event.type === 'date' ? 'Encontro' : 'Outro'}
+          ) : (
+            <div className="space-y-3">
+              {priorityWishes.map((wish) => (
+                <div key={wish.id} className="flex items-center p-3 bg-gradient-to-r from-rose-50 to-pink-50 rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">{wish.title}</h4>
+                    <div className="flex items-center mt-1">
+                      <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium mr-2">
+                        Alta Prioridade
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {wish.category}
+                      </span>
+                    </div>
+                  </div>
+                  <Star className="text-rose-500" size={20} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Photos */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Fotos Recentes</h2>
+          
+          {recentPhotos.length === 0 ? (
+            <p className="text-gray-500 text-center py-6">
+              Nenhuma foto ainda. Que tal adicionar algumas memórias?
+            </p>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {recentPhotos.map((photo) => (
+                <div key={photo.id} className="relative group">
+                  <img
+                    src={photo.url}
+                    alt={photo.title}
+                    className="w-full h-20 object-cover rounded-lg"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                    <span className="text-white text-xs font-medium text-center px-1">
+                      {photo.title}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">{event.description}</p>
-                  {event.location && (
-                    <p className="text-xs text-gray-500 mt-1">📍 {event.location}</p>
-                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Notes */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Anotações Recentes</h2>
+          
+          {recentNotes.length === 0 ? (
+            <p className="text-gray-500 text-center py-6">
+              Nenhuma anotação ainda. Registrem seus pensamentos!
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {recentNotes.map((note) => (
+                <div key={note.id} className="p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-1">{note.title}</h4>
+                  <p className="text-sm text-gray-600 line-clamp-2">{note.content}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {new Date(event.date).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                      weekday: 'long'
-                    })}
+                    {new Date(note.updatedAt).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
-                <div className={`w-3 h-3 rounded-full ${
-                  event.type === 'anniversary' ? 'bg-rose-500' :
-                  event.type === 'trip' ? 'bg-blue-500' :
-                  event.type === 'date' ? 'bg-purple-500' : 'bg-gray-500'
-                }`} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Recent Photos */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Momentos Recentes</h2>
-          <Camera className="text-gray-500" size={20} />
+              ))}
+            </div>
+          )}
         </div>
-        {recentPhotos.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">Nenhuma foto ainda. Comecem a registrar seus momentos!</p>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {recentPhotos.map((photo) => (
-              <div key={photo.id} className="relative group">
-                <img
-                  src={photo.url}
-                  alt={photo.title}
-                  className="w-full h-32 object-cover rounded-lg shadow-md group-hover:shadow-lg transition-shadow"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all">
-                  <div className="absolute bottom-2 left-2 right-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-xs font-medium truncate">{photo.title}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
+      {/* Modais das ações rápidas permanecem os mesmos... */}
       {/* Quick Event Modal */}
       {showQuickEventModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Evento Rápido</h3>
-              <button
-                onClick={() => setShowQuickEventModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleQuickEventSubmit} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  value={quickEventForm.title}
-                  onChange={(e) => setQuickEventForm({ ...quickEventForm, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nome do evento"
-                  required
-                />
-              </div>
-
-              <div>
-                <input
-                  type="text"
-                  value={quickEventForm.description}
-                  onChange={(e) => setQuickEventForm({ ...quickEventForm, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Descrição (opcional)"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="date"
-                  value={quickEventForm.date}
-                  onChange={(e) => setQuickEventForm({ ...quickEventForm, date: e.target.value })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <select
-                  value={quickEventForm.type}
-                  onChange={(e) => setQuickEventForm({ ...quickEventForm, type: e.target.value as Event['type'] })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="date">Encontro</option>
-                  <option value="anniversary">Aniversário</option>
-                  <option value="trip">Viagem</option>
-                  <option value="other">Outro</option>
-                </select>
-              </div>
-
-              <div className="flex space-x-3 pt-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Evento Rápido</h3>
                 <button
-                  type="button"
                   onClick={() => setShowQuickEventModal(false)}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all"
-                >
-                  Criar
+                  <X size={20} />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleQuickEvent} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={quickEventForm.title}
+                    onChange={(e) => setQuickEventForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Nome do evento"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descrição
+                  </label>
+                  <textarea
+                    value={quickEventForm.description}
+                    onChange={(e) => setQuickEventForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={2}
+                    placeholder="Descrição opcional"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Data
+                    </label>
+                    <input
+                      type="date"
+                      value={quickEventForm.date}
+                      onChange={(e) => setQuickEventForm(prev => ({ ...prev, date: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo
+                    </label>
+                    <select
+                      value={quickEventForm.type}
+                      onChange={(e) => setQuickEventForm(prev => ({ ...prev, type: e.target.value as Event['type'] }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="date">Encontro</option>
+                      <option value="anniversary">Aniversário</option>
+                      <option value="trip">Viagem</option>
+                      <option value="other">Outro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickEventModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    Criar Evento
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Quick Wish Modal */}
       {showQuickWishModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Desejo Rápido</h3>
-              <button
-                onClick={() => setShowQuickWishModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleQuickWishSubmit} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  value={quickWishForm.title}
-                  onChange={(e) => setQuickWishForm({ ...quickWishForm, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                  placeholder="O que vocês querem fazer?"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <select
-                  value={quickWishForm.category}
-                  onChange={(e) => setQuickWishForm({ ...quickWishForm, category: e.target.value as WishItem['category'] })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                >
-                  <option value="activity">🎯 Atividade</option>
-                  <option value="travel">✈️ Viagem</option>
-                  <option value="restaurant">🍽️ Restaurante</option>
-                  <option value="dream">💭 Sonho</option>
-                  <option value="other">📝 Outro</option>
-                </select>
-                <select
-                  value={quickWishForm.priority}
-                  onChange={(e) => setQuickWishForm({ ...quickWishForm, priority: e.target.value as WishItem['priority'] })}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                >
-                  <option value="low">Baixa</option>
-                  <option value="medium">Média</option>
-                  <option value="high">Alta</option>
-                </select>
-              </div>
-
-              <div className="flex space-x-3 pt-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Desejo Rápido</h3>
                 <button
-                  type="button"
                   onClick={() => setShowQuickWishModal(false)}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all"
-                >
-                  Adicionar
+                  <X size={20} />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleQuickWish} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={quickWishForm.title}
+                    onChange={(e) => setQuickWishForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    placeholder="O que desejam fazer?"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Categoria
+                    </label>
+                    <select
+                      value={quickWishForm.category}
+                      onChange={(e) => setQuickWishForm(prev => ({ ...prev, category: e.target.value as WishItem['category'] }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    >
+                      <option value="travel">Viagem</option>
+                      <option value="restaurant">Restaurante</option>
+                      <option value="activity">Atividade</option>
+                      <option value="dream">Sonho</option>
+                      <option value="other">Outro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Prioridade
+                    </label>
+                    <select
+                      value={quickWishForm.priority}
+                      onChange={(e) => setQuickWishForm(prev => ({ ...prev, priority: e.target.value as WishItem['priority'] }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    >
+                      <option value="low">Baixa</option>
+                      <option value="medium">Média</option>
+                      <option value="high">Alta</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickWishModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors"
+                  >
+                    Adicionar Desejo
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Quick Note Modal */}
       {showQuickNoteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Anotação Rápida</h3>
-              <button
-                onClick={() => setShowQuickNoteModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleQuickNoteSubmit} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  value={quickNoteForm.title}
-                  onChange={(e) => setQuickNoteForm({ ...quickNoteForm, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Título da anotação"
-                  required
-                />
-              </div>
-
-              <div>
-                <textarea
-                  value={quickNoteForm.content}
-                  onChange={(e) => setQuickNoteForm({ ...quickNoteForm, content: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  rows={4}
-                  placeholder="Escreva sua anotação aqui..."
-                  required
-                />
-              </div>
-
-              <div className="flex space-x-3 pt-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Anotação Rápida</h3>
                 <button
-                  type="button"
                   onClick={() => setShowQuickNoteModal(false)}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all"
-                >
-                  Salvar
+                  <X size={20} />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleQuickNote} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={quickNoteForm.title}
+                    onChange={(e) => setQuickNoteForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Título da anotação"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Conteúdo
+                  </label>
+                  <textarea
+                    value={quickNoteForm.content}
+                    onChange={(e) => setQuickNoteForm(prev => ({ ...prev, content: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    rows={4}
+                    placeholder="Escreva sua anotação aqui..."
+                  />
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickNoteModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                  >
+                    Salvar Anotação
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Quick Photo Modal */}
       {showQuickPhotoModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Foto Rápida</h3>
-              <button
-                onClick={() => setShowQuickPhotoModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleQuickPhotoSubmit} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  value={quickPhotoForm.title}
-                  onChange={(e) => setQuickPhotoForm({ ...quickPhotoForm, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  placeholder="Título da foto"
-                  required
-                />
-              </div>
-
-              <div>
-                <textarea
-                  value={quickPhotoForm.description}
-                  onChange={(e) => setQuickPhotoForm({ ...quickPhotoForm, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  rows={3}
-                  placeholder="Descreva este momento especial..."
-                />
-              </div>
-
-              <div className="bg-emerald-50 p-4 rounded-lg">
-                <div className="flex items-center justify-center text-emerald-600">
-                  <Camera className="mr-2" size={20} />
-                  <span className="text-sm">Uma foto aleatória será adicionada</span>
-                </div>
-              </div>
-
-              <div className="flex space-x-3 pt-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Foto Rápida</h3>
                 <button
-                  type="button"
                   onClick={() => setShowQuickPhotoModal(false)}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all"
-                >
-                  Adicionar
+                  <X size={20} />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleQuickPhoto} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Título
+                  </label>
+                  <input
+                    type="text"
+                    value={quickPhotoForm.title}
+                    onChange={(e) => setQuickPhotoForm(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="Título da foto"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descrição
+                  </label>
+                  <textarea
+                    value={quickPhotoForm.description}
+                    onChange={(e) => setQuickPhotoForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    rows={3}
+                    placeholder="Descreva o momento..."
+                  />
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-2">
+                    📷 Upload simulado (versão demo)
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Uma foto de exemplo será adicionada automaticamente para demonstração.
+                  </p>
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickPhotoModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                  >
+                    Adicionar Foto
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
+      
     </div>
   );
 }
