@@ -13,7 +13,8 @@ import {
   User,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Plane, // Novo ícone para viagens
 } from 'lucide-react';
 import logo from './../assents/Logo.png';
 
@@ -31,9 +32,11 @@ export default function Layout({ children, currentSection, onSectionChange }: La
 
   const unreadNotifications = state.notifications.filter(n => !n.read).length;
 
+  // Menu items atualizado incluindo a nova seção de viagens
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'calendar', label: 'Calendário', icon: Calendar },
+    { id: 'travels', label: 'Viagens', icon: Plane }, // Nova seção de viagens
     { id: 'wishes', label: 'Lista de Desejos', icon: Heart },
     { id: 'notes', label: 'Anotações', icon: FileText },
     { id: 'photos', label: 'Galeria', icon: Camera },
@@ -49,202 +52,269 @@ export default function Layout({ children, currentSection, onSectionChange }: La
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-rose-200/50 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex items-center space-x-2">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center">
-                  <img src={logo} alt="Logo da aplicação" />
+      <header className="bg-white/80 backdrop-blur-sm border-b border-rose-200/50 fixed top-0 left-0 right-0 z-50">
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* Logo e Toggle Mobile */}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+            
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="hidden lg:flex p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+            >
+              {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            </button>
+
+            <div className="flex items-center space-x-2">
+              <img src={logo} alt="WeMoment" className="w-8 h-8" />
+              <span className="font-bold text-xl bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+                WeMoment
+              </span>
+            </div>
+          </div>
+
+          {/* User Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-2 p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+            >
+              {state.auth.user?.avatar ? (
+                <img
+                  src={state.auth.user.avatar}
+                  alt={state.auth.user.firstName || state.auth.user.name || 'Usuário'}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  {(state.auth.user?.firstName || state.auth.user?.name || 'U').charAt(0).toUpperCase()}
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-                  WeMoment
-                </h1>
-              </div>
-            </div>
+              )}
+              <span className="hidden sm:block font-medium">
+                {state.auth.user?.firstName || state.auth.user?.name || 'Usuário'}
+              </span>
+            </button>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                {state.auth.user && (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">
-                        {state.auth.user.firstName?.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    {state.auth.partner && (
-                      <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-rose-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {state.auth.partner.firstName?.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="relative">
+            {/* User Dropdown */}
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="p-2 rounded-lg hover:bg-rose-100 transition-colors"
+                  onClick={() => {
+                    onSectionChange('settings');
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  <User size={20} />
+                  <User size={16} className="mr-3" />
+                  Configurações
                 </button>
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium">{state.auth.user?.firstName} {state.auth.user?.lastName}</p>
-                      <p className="text-xs text-gray-500">{state.auth.user?.email}</p>
-                    </div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <LogOut size={16} className="mr-2" />
-                      Sair
-                    </button>
-                  </div>
-                )}
+                <hr className="my-2" />
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={16} className="mr-3" />
+                  Sair
+                </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </header>
 
       <div className="flex">
-        {/* Desktop Sidebar - Agora com funcionalidade de minimizar */}
-        <aside className={`hidden md:block fixed top-16 left-0 bottom-0 bg-white/80 backdrop-blur-sm border-r border-rose-200/50 z-30 overflow-y-auto transition-all duration-300 ${
-          isSidebarCollapsed ? 'w-16' : 'w-64'
+        {/* Desktop Sidebar */}
+        <aside className={`hidden lg:flex flex-col bg-white/80 backdrop-blur-sm border-r border-rose-200/50 fixed left-0 top-0 h-screen z-40 transition-all duration-300 ${
+          isSidebarCollapsed ? 'w-20' : 'w-64'
         }`}>
-          {/* Botão para minimizar/expandir */}
-          <div className="flex justify-end p-2">
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 rounded-lg hover:bg-rose-100 transition-colors"
-              title={isSidebarCollapsed ? 'Expandir menu' : 'Minimizar menu'}
-            >
-              {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-            </button>
-          </div>
-
-          <nav className={`px-2 pb-8 ${isSidebarCollapsed ? 'px-2' : 'px-4'}`}>
-            <ul className="space-y-2">
+          <nav className="flex-1 p-4 pt-20">
+            <div className="space-y-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentSection === item.id;
+                const hasNotifications = item.id === 'notifications' && unreadNotifications > 0;
+
                 return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => onSectionChange(item.id)}
-                      className={`w-full flex items-center rounded-lg transition-all duration-200 ${
-                        isSidebarCollapsed ? 'px-3 py-3 justify-center relative' : 'px-4 py-3'
-                      } ${isActive
-                          ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
-                          : 'text-gray-700 hover:bg-rose-100'
-                        }`}
-                      title={isSidebarCollapsed ? item.label : ''}
-                    >
-                      <div className={isSidebarCollapsed ? 'relative' : ''}>
-                        <Icon size={20} className={isSidebarCollapsed ? '' : 'mr-3'} />
-                        {isSidebarCollapsed && item.id === 'notifications' && unreadNotifications > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                            {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  <button
+                    key={item.id}
+                    onClick={() => onSectionChange(item.id)}
+                    className={`w-full flex items-center px-3 py-3 rounded-xl font-medium transition-all group relative ${
+                      isActive
+                        ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
+                        : 'text-gray-600 hover:bg-rose-50 hover:text-rose-600'
+                    }`}
+                  >
+                    <Icon size={20} className={`${isSidebarCollapsed ? '' : 'mr-3'} flex-shrink-0`} />
+                    {!isSidebarCollapsed && (
+                      <>
+                        <span className="truncate">{item.label}</span>
+                        {hasNotifications && (
+                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {unreadNotifications}
                           </span>
                         )}
+                      </>
+                    )}
+                    {isSidebarCollapsed && hasNotifications && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadNotifications}
+                      </span>
+                    )}
+                    
+                    {/* Tooltip for collapsed sidebar */}
+                    {isSidebarCollapsed && (
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+                        {item.label}
+                        {hasNotifications && ` (${unreadNotifications})`}
                       </div>
-                      {!isSidebarCollapsed && (
-                        <>
-                          {item.label}
-                          {item.id === 'notifications' && unreadNotifications > 0 && (
-                            <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                              {unreadNotifications}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </button>
-                  </li>
+                    )}
+                  </button>
                 );
               })}
-            </ul>
-          </nav>
-        </aside>
-
-        {/* Mobile Sidebar - Desliza de baixo para cima */}
-        <aside className={`${isMobileMenuOpen ?
-          'translate-y-0' : 'translate-y-full'
-          } md:hidden fixed bottom-0 left-0 right-0 h-3/4 bg-white/95 backdrop-blur-sm border-t border-rose-200/50 z-50 transition-transform duration-300 ease-in-out rounded-t-2xl shadow-2xl overflow-y-auto`}>
-          <div className="flex justify-between items-center pt-4 pb-2 px-4">
-            <div className="flex justify-center flex-1">
-              <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
             </div>
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="p-2 rounded-lg hover:bg-rose-100 transition-colors"
-            >
-              <X size={20} className="text-gray-600" />
-            </button>
-          </div>
-          <div className="px-4 pb-2">
-            <h2 className="text-lg font-semibold text-gray-800">Menu</h2>
-          </div>
-          <nav className="px-4 pb-8">
-            <ul className="space-y-2">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentSection === item.id;
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => {
-                        onSectionChange(item.id);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center px-4 py-3 text-left rounded-lg transition-all duration-200 ${isActive
-                          ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
-                          : 'text-gray-700 hover:bg-rose-100'
-                        }`}
-                    >
-                      <Icon size={20} className="mr-3" />
-                      {item.label}
-                      {item.id === 'notifications' && unreadNotifications > 0 && (
-                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          {unreadNotifications}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
           </nav>
+
+          {/* User Profile in Sidebar */}
+          {!isSidebarCollapsed && state.auth.partner && (
+            <div className="p-4 border-t border-rose-200/50">
+              <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl p-4">
+                <div className="flex items-center space-x-3">
+                  {state.auth.user?.avatar ? (
+                    <img
+                      src={state.auth.user.avatar}
+                      alt={state.auth.user.firstName || state.auth.user.name || 'Usuário'}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium">
+                      {(state.auth.user?.firstName || state.auth.user?.name || 'U').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900">
+                      {state.auth.user?.firstName || state.auth.user?.name || 'Usuário'}
+                    </div>
+                    <div className="text-gray-500">
+                      💕 Com {state.auth.partner?.firstName || state.auth.partner?.name || 'Parceiro(a)'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </aside>
 
-        {/* Mobile Menu Button - Botão flutuante */}
-        <button
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-40"
-        >
-          <Menu size={24} />
-        </button>
-
-        {/* Mobile overlay */}
+        {/* Mobile Overlay */}
         {isMobileMenuOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            <div className="fixed inset-0 bg-black/50" onClick={() => setIsMobileMenuOpen(false)} />
+            <aside className="relative flex flex-col w-80 max-w-sm bg-white border-r border-rose-200/50">
+              <div className="flex items-center justify-between p-4 border-b border-rose-200/50">
+                <div className="flex items-center space-x-2">
+                  <img src={logo} alt="WeMoment" className="w-8 h-8" />
+                  <span className="font-bold text-xl bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+                    WeMoment
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <nav className="flex-1 p-4">
+                <div className="space-y-2">
+                  {menuItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentSection === item.id;
+                    const hasNotifications = item.id === 'notifications' && unreadNotifications > 0;
+
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          onSectionChange(item.id);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center px-4 py-3 rounded-xl font-medium transition-all ${
+                          isActive
+                            ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
+                            : 'text-gray-600 hover:bg-rose-50 hover:text-rose-600'
+                        }`}
+                      >
+                        <Icon size={20} className="mr-3" />
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {hasNotifications && (
+                          <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {unreadNotifications}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </nav>
+
+              {/* User Profile in Mobile Menu */}
+              {state.auth.partner && (
+                <div className="p-4 border-t border-rose-200/50">
+                  <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl p-4">
+                    <div className="flex items-center space-x-3">
+                      {state.auth.user?.avatar ? (
+                        <img
+                          src={state.auth.user.avatar}
+                          alt={state.auth.user.firstName || state.auth.user.name || 'Usuário'}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium">
+                          {(state.auth.user?.firstName || state.auth.user?.name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-900">
+                          {state.auth.user?.firstName || state.auth.user?.name || 'Usuário'}
+                        </div>
+                        <div className="text-gray-500">
+                          💕 Com {state.auth.partner?.firstName || state.auth.partner?.name || 'Parceiro(a)'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </aside>
+          </div>
         )}
 
-        {/* Main content - Ajusta conforme o estado do sidebar */}
-        <main className={`flex-1 p-6 md:p-8 transition-all duration-300 ${
-          isSidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
+        {/* Main Content */}
+        <main className={`flex-1 transition-all duration-300 ${
+          isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
         }`}>
-          <div className="max-w-7xl mx-auto">
-            {children}
+          <div className="h-screen overflow-y-auto pt-16">
+            <div className="p-4 sm:p-6 lg:p-8">
+              {children}
+            </div>
           </div>
         </main>
       </div>
+
+      {/* Close dropdowns when clicking outside */}
+      {showUserMenu && (
+        <div
+          className="fixed inset-0 z-30"
+          onClick={() => setShowUserMenu(false)}
+        />
+      )}
     </div>
   );
 }
