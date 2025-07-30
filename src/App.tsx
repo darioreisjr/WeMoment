@@ -12,7 +12,7 @@ import Wishes from './components/Wishes';
 import Notes from './components/Notes';
 import Photos from './components/Photos';
 import Notifications from './components/Notifications';
-import Settings from './components/Settings';
+import Settings from './components/SettingsComponent';
 
 /**
  * Componente principal da aplicação com roteamento por seções
