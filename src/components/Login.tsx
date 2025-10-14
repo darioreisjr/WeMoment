@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import logo from './../assents/Logo.png';
 import SignUp from './SignUp';
+import ForgotPassword from './ForgotPassword'; // Importe o novo componente
 
 export default function Login() {
   const { dispatch } = useApp();
@@ -15,10 +16,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false); // Novo estado
 
   // Se estiver na tela de cadastro, renderiza o componente SignUp
   if (showSignUp) {
     return <SignUp onBackToLogin={() => setShowSignUp(false)} />;
+  }
+
+  // Se estiver na tela de redefinição de senha, renderiza o componente ForgotPassword
+  if (showForgotPassword) {
+    return <ForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,7 +143,10 @@ export default function Login() {
         </form>
 
         <div className="mt-6 text-center space-y-3">
-          <button className="text-rose-600 hover:text-rose-700 text-sm transition-colors">
+          <button
+            onClick={() => setShowForgotPassword(true)}
+            className="text-rose-600 hover:text-rose-700 text-sm transition-colors"
+          >
             Esqueceu sua senha?
           </button>
           
