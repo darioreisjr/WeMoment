@@ -17,6 +17,7 @@ export interface AuthState {
   relationshipStartDate?: string;
   inviteCode?: string; // Código de convite gerado
   isCoupleFull: boolean; // Indica se o casal já está completo (2 pessoas)
+  token?: string; // Adicionado para armazenar o token de autenticação
 }
 
 export interface InviteCode {
@@ -109,7 +110,7 @@ export interface Travel {
 export interface TravelChecklist {
   id: string;
   item: string;                   // Descrição do item (ex: "Passaporte", "Protetor solar")
-  category: 
+  category:
     | 'bagagem'                   // Itens de bagagem geral
     | 'documentos'                // Documentos necessários
     | 'medicamentos'              // Remédios e produtos de saúde
@@ -156,7 +157,7 @@ export interface AppState {
  */
 export type Action =
   // Actions existentes
-  | { type: 'LOGIN'; payload: { user: User; partner?: User } }
+  | { type: 'LOGIN'; payload: { user: User; partner?: User; token?: string } }
   | { type: 'LOGOUT' }
   | { type: 'SET_PARTNER'; payload: User }
   | { type: 'UPDATE_USER_PROFILE'; payload: User }

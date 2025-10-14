@@ -19,22 +19,34 @@ export default function Login() {
     setError('');
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      if (formData.email === 'admin@casal.com.br' && formData.password === 'casal@3214') {
-        const user: User = {
-          id: '1',
-          name: 'Admin',
-          email: formData.email,
-          gender: 'male',
-          createdAt: new Date().toISOString(),
-        };
-        dispatch({ type: 'LOGIN', payload: { user } });
+    try {
+      const response = await fetch('https://apiwemoment.darioreis.dev/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Assuming the API returns a user object and a token
+        const user: User = data.user;
+        const token: string = data.token;
+
+        // Store the token in localStorage
+        localStorage.setItem('authToken', token);
+
+        dispatch({ type: 'LOGIN', payload: { user, token } });
       } else {
-        setError('Email ou senha incorretos');
+        setError(data.message || 'Email ou senha incorretos');
       }
+    } catch (err) {
+      setError('Não foi possível conectar ao servidor. Tente novamente mais tarde.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -64,7 +76,7 @@ export default function Login() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                placeholder="admin@casal.com.br"
+                placeholder="seuemail@exemplo.com"
                 required
               />
             </div>
@@ -81,7 +93,7 @@ export default function Login() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                placeholder="casal@3214"
+                placeholder="Sua senha"
                 required
               />
               <button
@@ -108,12 +120,6 @@ export default function Login() {
             {isLoading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Credenciais de teste:</p>
-          <p>Email: admin@casal.com.br</p>
-          <p>Senha: casal@3214</p>
-        </div>
       </div>
     </div>
   );

@@ -44,6 +44,7 @@ const initialState: AppState = {
     relationshipStartDate: undefined,
     inviteCode: undefined,
     isCoupleFull: false,
+    token: undefined,
   },
   events: [],
   wishItems: [],
@@ -79,6 +80,7 @@ function appReducer(state: AppState, action: Action): AppState {
           relationshipStartDate: state.auth.relationshipStartDate,
           inviteCode: state.auth.inviteCode,
           isCoupleFull,
+          token: action.payload.token,
         },
       };
 
