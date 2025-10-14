@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Analytics } from '@vercel/analytics/react';
 import { AppProvider, useApp } from './context/AppContext';
@@ -7,12 +7,13 @@ import Login from './components/Login';
 import ProfileSetup from './components/ProfileSetup';
 import Dashboard from './components/Dashboard';
 import Calendar from './components/Calendar';
-import Travels from './components/Travels';  // Nova importação para o componente de viagens
+import Travels from './components/Travels';
 import Wishes from './components/Wishes';
 import Notes from './components/Notes';
 import Photos from './components/Photos';
 import Notifications from './components/Notifications';
 import Settings from './components/SettingsComponent';
+import UpdatePassword from './components/UpdatePassword'; // Importe o novo componente
 
 /**
  * Componente principal da aplicação com roteamento por seções
@@ -21,6 +22,11 @@ import Settings from './components/SettingsComponent';
 function AppContent() {
   const { state } = useApp();
   const [currentSection, setCurrentSection] = useState('dashboard');
+  
+  // Rota para a página de atualização de senha
+  if (window.location.pathname === '/update-password') {
+    return <UpdatePassword />;
+  }
 
   // Redireciona para login se não estiver autenticado
   if (!state.auth.isAuthenticated) {
@@ -42,7 +48,7 @@ function AppContent() {
         return <Dashboard />;
       case 'calendar':
         return <Calendar />;
-      case 'travels':        // Nova seção de viagens
+      case 'travels':
         return <Travels />;
       case 'wishes':
         return <Wishes />;
