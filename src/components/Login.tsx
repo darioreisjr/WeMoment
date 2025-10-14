@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { User } from '../types';
-import { Heart, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import toast from 'react-hot-toast';
 import logo from './../assents/Logo.png';
+import SignUp from './SignUp';
 
 export default function Login() {
   const { dispatch } = useApp();
@@ -11,16 +13,20 @@ export default function Login() {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false);
+
+  // Se estiver na tela de cadastro, renderiza o componente SignUp
+  if (showSignUp) {
+    return <SignUp onBackToLogin={() => setShowSignUp(false)} />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://apiwemoment.darioreis.dev/api/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,19 +37,21 @@ export default function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Assuming the API returns a user object and a token
+        // A API retorna um objeto user e um token
         const user: User = data.user;
         const token: string = data.token;
 
-        // Store the token in localStorage
+        // Armazena o token no localStorage
         localStorage.setItem('authToken', token);
 
         dispatch({ type: 'LOGIN', payload: { user, token } });
+        toast.success('Login realizado com sucesso!');
       } else {
-        setError(data.message || 'Email ou senha incorretos');
+        toast.error(data.message || 'Email ou senha incorretos');
       }
     } catch (err) {
-      setError('Não foi possível conectar ao servidor. Tente novamente mais tarde.');
+      console.error('Erro no login:', err);
+      toast.error('Não foi possível conectar ao servidor. Tente novamente mais tarde.');
     } finally {
       setIsLoading(false);
     }
@@ -106,20 +114,50 @@ export default function Login() {
             </div>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white py-3 px-4 rounded-lg font-medium hover:from-rose-600 hover:to-pink-600 focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-rose-500 to-pink-600 text-white py-3 rounded-lg font-semibold 
+                     hover:from-rose-600 hover:to-pink-700 transform hover:scale-[1.02] transition-all duration-200 
+                     shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {isLoading ? 'Entrando...' : 'Entrar'}
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Entrando...
+              </span>
+            ) : (
+              'Entrar'
+            )}
           </button>
         </form>
+
+        <div className="mt-6 text-center space-y-3">
+          <button className="text-rose-600 hover:text-rose-700 text-sm transition-colors">
+            Esqueceu sua senha?
+          </button>
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">ou</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowSignUp(true)}
+            type="button"
+            className="w-full border-2 border-rose-500 text-rose-600 py-3 rounded-lg font-semibold 
+                     hover:bg-rose-50 transform hover:scale-[1.02] transition-all duration-200"
+          >
+            Criar nova conta
+          </button>
+        </div>
       </div>
     </div>
   );
