@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Analytics } from '@vercel/analytics/react';
 import { AppProvider, useApp } from './context/AppContext';
@@ -40,7 +40,6 @@ function AppContent() {
 
   /**
    * Renderiza o componente apropriado baseado na seção atual
-   * Inclui a nova seção 'travels' para o organizador de viagens
    */
   const renderSection = () => {
     switch (currentSection) {
@@ -74,14 +73,12 @@ function AppContent() {
 
 /**
  * Componente raiz da aplicação com providers e configurações globais
- * Inclui configuração de toasts, analytics e contexto global
  */
 function App() {
   return (
     <AppProvider>
       <AppContent />
       
-      {/* Configuração de Toast Notifications */}
       <Toaster
         position="top-right"
         toastOptions={{
@@ -115,7 +112,6 @@ function App() {
         }}
       />
       
-      {/* Analytics do Vercel */}
       <Analytics />
     </AppProvider>
   );
