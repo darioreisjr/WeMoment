@@ -1,287 +1,194 @@
-# 💕 Aplicativo Web para Casais - "WeMoment"
+# 💕 WeMoment
 
-Um aplicativo web moderno e romântico desenvolvido especialmente para casais registrarem, planejarem e celebrarem seus momentos especiais juntos. Com design responsivo e interface intuitiva, o app oferece uma experiência completa para organizar a vida a dois.
+Aplicativo web moderno e romântico para casais registrarem, planejarem e celebrarem seus momentos especiais. Desenvolvido com React + TypeScript e foco em experiência mobile, o WeMoment reúne painel inteligente, calendário interativo, diário de desejos e memórias compartilhadas.
 
-## ✨ Funcionalidades Principais
+## 📚 Sumário
 
-### 🔐 Sistema de Autenticação
-- **Login Simulado**: Sistema de autenticação com credenciais fixas
-- **Credenciais de Acesso**:
-  - Email: `admin@casal.com.br`
-  - Senha: `casal@3214`
+- [✨ Principais Funcionalidades](#-principais-funcionalidades)
+- [🧠 Arquitetura & Persistência](#-arquitetura--persistência)
+- [🛠️ Tecnologias](#️-tecnologias)
+- [⚙️ Configuração do Ambiente](#️-configuração-do-ambiente)
+- [🚀 Scripts Disponíveis](#-scripts-disponíveis)
+- [📁 Estrutura do Projeto](#-estrutura-do-projeto)
+- [🔌 Integrações Externas](#-integrações-externas)
+- [🔮 Roadmap](#-roadmap)
+- [🤝 Contribuição](#-contribuição)
+- [📄 Licença](#-licença)
 
-### 👥 Gestão Avançada de Perfis
-- **Configuração Completa de Casal**: Criação de dois perfis personalizados (masculino e feminino)
-- **Nomes Completos**: Sistema que permite cadastrar nome e sobrenome separadamente para maior personalização
-- **Fotos de Perfil Personalizadas**: 
-  - Upload de imagens que são convertidas automaticamente para base64
-  - Armazenamento local das fotos de perfil
-  - Fallback inteligente para avatars com iniciais quando não há foto
-  - Interface de edição com botão de câmera sobreposto
-- **Informações Detalhadas**: Cada pessoa pode ter seu próprio avatar, nome completo e informações pessoais
-- **Acesso Exclusivo**: Apenas o casal cadastrado pode acessar o aplicativo
+## ✨ Principais Funcionalidades
 
-### 💞 Sistema de Relacionamento
-- **Data de Início do Namoro**: Campo dedicado para registrar quando o relacionamento começou
-- **Cálculo Automático de Tempo Juntos**: 
-  - Calcula automaticamente anos, meses e dias de relacionamento
-  - Exibição dinâmica e atualizada do tempo juntos
-  - Interface visual atrativa para mostrar a duração do relacionamento
-- **Marco Temporal**: Referência importante para criar contexto em eventos e memórias
+### 🔐 Autenticação conectada à API
+- **Login real** com backend configurável via `VITE_API_URL`.
+- **Cadastro completo** com nome, sobrenome e gênero.
+- **Recuperação de senha** com fluxo de e-mail e página dedicada de redefinição (Supabase).
+- **Sessões autenticadas** com armazenamento seguro do token JWT.
 
-### ⚙️ Central de Configurações Avançada
-- **Edição Completa de Perfis**: Interface dedicada para atualizar todas as informações do casal
-- **Upload de Fotos**: Sistema integrado para alterar fotos de perfil com preview em tempo real
-- **Gestão de Relacionamento**: Configuração e edição da data de início do namoro
-- **Informações da Conta**: Visualização de estatísticas e dados armazenados
-- **Zona de Segurança**: Opções para gerenciar dados com confirmações de segurança
+### 💑 Onboarding de Casal e Perfis
+- Configuração guiada de dois perfis com campos separados para nome/sobrenome.
+- Upload de avatar com conversão automática para Base64 e fallback com iniciais.
+- Validações de idade mínima, datas e campos obrigatórios.
+- Indicador visual do status do casal e central de convites para conectar parceiros.
 
 ### 🏠 Dashboard Inteligente
-- **Visão Geral Personalizada**: Estatísticas completas de eventos, desejos, anotações e fotos
-- **Saudação Personalizada**: Usa os nomes completos do casal para uma experiência mais íntima
-- **Próximos Eventos**: Lista dos eventos mais próximos com detalhes
-- **Momentos Recentes**: Galeria das fotos mais recentes
-- **Ações Rápidas**: Botões para criação rápida de conteúdo
-- **Filtros Temporais**: Sistema avançado para filtrar eventos por ano e mês
+- Saudação personalizada usando os nomes do casal.
+- Estatísticas instantâneas de eventos, desejos, notas, fotos e viagens.
+- Atalhos para criação rápida de conteúdos e visão dos próximos eventos.
 
 ### 📅 Calendário Interativo
-- **Visualização Mensal**: Calendário completo com navegação intuitiva
-- **Tipos de Eventos**: Encontros, aniversários, viagens e eventos personalizados
-- **Criação Rápida**: Modal para adicionar eventos diretamente no calendário
-- **Indicadores Visuais**: Cores diferentes para cada tipo de evento
-- **Detalhes Completos**: Local, descrição e horário para cada evento
+- Visualização mensal com eventos coloridos por tipo (encontros, aniversários, viagens, personalizados).
+- Modais rápidos para criar, editar e excluir eventos.
+- Sincronização automática com viagens registradas.
+
+### 🧳 Planejamento de Viagens
+- Gestão completa de viagens com destino, datas, orçamento estimado e participantes.
+- Checklist categorizado (bagagem, documentos, eletrônicos etc.) com marcação visual.
+- Controle de despesas por categoria e linha do tempo da viagem.
+- Galeria de fotos específicas por viagem e integração com calendário.
 
 ### 💝 Lista de Desejos Compartilhada
-- **Categorias Organizadas**: Viagens, restaurantes, atividades, sonhos e outros
-- **Sistema de Prioridades**: Baixa, média e alta prioridade com cores distintas
-- **Status de Conclusão**: Marcar desejos como realizados com feedback visual
-- **Estatísticas Detalhadas**: Acompanhamento de desejos realizados vs pendentes
-- **Notificações de Conquista**: Celebração automática quando desejos são realizados
+- Categorias (viagens, restaurantes, atividades, sonhos e outros) com prioridades coloridas.
+- Status de conclusão, estatísticas e notificações de conquistas.
 
 ### 📝 Sistema de Anotações
-- **Bloco de Notas Compartilhado**: Espaço para ideias, lembretes e recados entre o casal
-- **Busca Inteligente**: Pesquisa por título e conteúdo com destaque de resultados
-- **Edição Completa**: Criar, editar e excluir anotações com interface amigável
-- **Identificação de Autor**: Mostra claramente quem criou cada anotação
-- **Timestamps**: Data de criação e última modificação
+- Bloco de notas colaborativo com busca, edição e histórico de atualização.
+- Identificação do autor e timestamps completos.
 
-### 📸 Galeria de Fotos Avançada
-- **Upload Simulado**: Sistema de upload com fotos de demonstração para testes
-- **Descrições Detalhadas**: Título, descrição e data para cada foto
-- **Visualização Ampliada Responsiva**: Modal para ver fotos em tamanho completo com detalhes, otimizado para todos os dispositivos
-- **Sistema de Edição**: Permite editar título e descrição das fotos (data permanece imutável)
-- **Filtro por Calendário Visual**: 
-  - Calendário interativo com indicadores visuais para dias com fotos
-  - Navegação por mês com pontinhos vermelhos indicando dias com conteúdo
-  - Filtragem instantânea por data selecionada
-- **Data Automática**: Novas fotos recebem automaticamente a data atual
-- **Layout Mobile Otimizado**: Botões "Filtrar por Data" e "Adicionar Foto" adaptados para dispositivos móveis
-- **Estatísticas Temporais**: Contadores de fotos por período (mês, semana)
-- **Dados Mockup**: 10 fotos de exemplo para testes e demonstração das funcionalidades
-- **Interface de Gestão**: Possibilidade de excluir fotos com confirmação
+### 📸 Galeria de Fotos
+- Upload simulado, dados mock para demonstração e filtro por calendário visual.
+- Modal responsivo para visualização ampliada, edição e exclusão com confirmação.
 
-### 🔔 Sistema de Notificações Inteligente
-- **Lembretes Automáticos**: Notificações para eventos e atividades importantes
-- **Tipos Variados**: Eventos, conquistas e lembretes gerais com ícones específicos
-- **Gerenciamento Completo**: Marcar como lidas e visualizar histórico completo
-- **Contador Visual**: Badge com número de notificações não lidas
-- **Ações em Massa**: Marcar todas as notificações como lidas
+### 🔔 Central de Notificações
+- Lembretes automáticos, conquistas e alertas de eventos.
+- Marcação individual ou em massa como lidas.
 
-## 🎨 Design e Experiência do Usuário
+### ⚙️ Configurações Avançadas
+- Edição completa dos perfis com validação em tempo real.
+- Estatísticas da conta, zona de segurança para limpar dados locais e gerenciamento de convites.
 
-### 🌈 Paleta de Cores Romântica
-- **Cores Primárias**: Tons de rosa, roxo e dourado criando atmosfera romântica
-- **Gradientes Suaves**: Transições harmoniosas entre cores para visual moderno
-- **Contraste Adequado**: Legibilidade garantida em todos os elementos da interface
+## 🧠 Arquitetura & Persistência
 
-### 📱 Responsividade Completa
-- **Mobile First**: Otimizado prioritariamente para dispositivos móveis
-- **Breakpoints Inteligentes**: Adaptação perfeita para tablet e desktop
-- **Touch Friendly**: Botões e elementos dimensionados adequadamente para toque
-- **Navegação Adaptativa**: Menu lateral que se transforma em overlay no mobile
-- **Layout Flexível**: Botões e controles se reorganizam automaticamente (coluna no mobile, linha no desktop)
-- **Modais Responsivos**: Formulários otimizados para toque e usabilidade
-- **Gestos Intuitivos**: Interações naturais em dispositivos móveis
-- **Performance**: Otimizações específicas para dispositivos com recursos limitados
+- **State global** com Context API + `useReducer`, garantindo previsibilidade e escalabilidade.
+- **Persistência local** automática em `localStorage`, permitindo funcionamento offline.
+- **Mock data inteligente** para galeria de fotos quando o usuário inicia sem registros.
+- **Token JWT** armazenado para chamadas autenticadas ao backend.
+- **Supabase** utilizado no fluxo de redefinição de senha via links mágicos.
 
-### ✨ Micro-interações e Feedback
-- **Hover States**: Efeitos suaves ao passar o mouse para desktop
-- **Transições Fluidas**: Animações suaves entre estados e páginas
-- **Feedback Visual**: Confirmações visuais claras para todas as ações do usuário
-- **Loading States**: Indicadores de carregamento para melhor experiência
+## 🛠️ Tecnologias
 
-## 🛠️ Tecnologias Utilizadas
+| Categoria        | Tecnologias |
+|------------------|-------------|
+| Framework        | React 18, Vite |
+| Linguagem        | TypeScript |
+| Estilização      | Tailwind CSS, CSS Modules utilitários |
+| UI/UX            | Lucide React, animações e microinterações customizadas |
+| Estado & Storage | Context API + Reducer, `localStorage` |
+| Backend/Infra    | API REST externa (`VITE_API_URL`), Supabase Auth, Vercel Analytics |
+| Feedback         | react-hot-toast |
 
-### Frontend
-- **React 18**: Biblioteca principal com hooks modernos para desenvolvimento eficiente
-- **TypeScript**: Tipagem estática para maior segurança e manutenibilidade do código
-- **Tailwind CSS**: Framework CSS utilitário para estilização rápida e consistente
-- **Lucide React**: Biblioteca de ícones moderna e consistente com o design
-
-### Gerenciamento de Estado
-- **React Context**: Gerenciamento global de estado da aplicação
-- **useReducer**: Lógica complexa de estado centralizada e previsível
-- **localStorage**: Persistência de dados local para funcionamento offline
-
-### Processamento de Imagens
-- **FileReader API**: Para conversão de imagens para base64
-- **Canvas API**: Potencial para redimensionamento de imagens (implementação futura)
-- **Base64 Encoding**: Armazenamento de imagens como strings no localStorage
-
-### Ferramentas de Desenvolvimento
-- **Vite**: Build tool rápido e moderno para desenvolvimento eficiente
-- **ESLint**: Linting para qualidade e consistência de código
-- **PostCSS**: Processamento de CSS para funcionalidades avançadas
-- **Autoprefixer**: Compatibilidade cross-browser automática
-
-## 🚀 Como Executar o Projeto
+## ⚙️ Configuração do Ambiente
 
 ### Pré-requisitos
-- Node.js (versão 16 ou superior)
-- npm ou yarn
-- Navegador web moderno
+- Node.js **>= 18**
+- npm **>= 9** (ou pnpm/yarn, se preferir)
 
-### Instalação
-```bash
-# Clone o repositório
-git clone [url-do-repositorio]
+### Passo a passo
+1. Clone o repositório
+   ```bash
+   git clone https://github.com/sua-conta/WeMoment.git
+   cd WeMoment
+   ```
+2. Instale as dependências
+   ```bash
+   npm install
+   ```
+3. Configure as variáveis de ambiente criando um arquivo `.env` na raiz com os valores adequados:
+   ```env
+   VITE_API_URL=https://sua-api.com
+   VITE_PUBLIC_SUPABASE_URL=https://sua-instancia.supabase.co
+   VITE_PUBLIC_SUPABASE_ANON_KEY=chave_publica_supabase
+   ```
+4. Execute o servidor de desenvolvimento
+   ```bash
+   npm run dev
+   ```
+5. Acesse em `http://localhost:5173` e explore todas as funcionalidades.
 
-# Entre no diretório
-cd aplicativo-casais
+> 💡 Caso deseje apenas visualizar o comportamento com dados de demonstração, mantenha as variáveis configuradas e utilize o login para carregar o painel com os mocks automáticos de fotos.
 
-# Instale as dependências
-npm install
+## 🚀 Scripts Disponíveis
 
-# Execute o projeto
-npm run dev
-```
+| Comando        | Descrição |
+|----------------|-----------|
+| `npm run dev`      | Inicia o ambiente de desenvolvimento com Vite |
+| `npm run build`    | Gera build otimizada para produção |
+| `npm run preview`  | Serve a build de produção localmente |
+| `npm run lint`     | Executa ESLint com regras para React + TypeScript |
 
-### Acesso e Configuração
-1. Abra o navegador em `http://localhost:5173`
-2. Use as credenciais de login:
-   - Email: `admin@casal.com.br`
-   - Senha: `casal@3214`
-3. Configure os perfis completos do casal (nome, sobrenome, foto)
-4. Defina a data de início do relacionamento
-5. Explore todas as funcionalidades!
-
-## 📁 Estrutura Atualizada do Projeto
+## 📁 Estrutura do Projeto
 
 ```
 src/
-├── components/          # Componentes React organizados por funcionalidade
-│   ├── Layout.tsx      # Layout principal com navegação responsiva
-│   ├── Login.tsx       # Tela de autenticação com validação
-│   ├── ProfileSetup.tsx # Configuração inicial de perfis
-│   ├── Dashboard.tsx   # Página inicial com estatísticas
-│   ├── Calendar.tsx    # Calendário interativo de eventos
-│   ├── Wishes.tsx      # Lista de desejos compartilhada
-│   ├── Notes.tsx       # Sistema de anotações
-│   ├── Photos.tsx      # Galeria de fotos avançada
-│   ├── Notifications.tsx # Central de notificações
-│   └── Settings.tsx    # Configurações avançadas
-├── context/            # Gerenciamento de estado global
-│   └── AppContext.tsx  # Context principal expandido
-├── types/              # Definições TypeScript atualizadas
-│   └── index.ts        # Interfaces e tipos expandidos
-├── App.tsx             # Componente raiz da aplicação
-└── main.tsx           # Ponto de entrada da aplicação
+├── components/
+│   ├── Layout.tsx               # Layout principal com navegação responsiva
+│   ├── Login.tsx                # Autenticação conectada à API
+│   ├── SignUp.tsx               # Cadastro de novos usuários
+│   ├── ForgotPassword.tsx       # Solicitação de redefinição de senha
+│   ├── UpdatePassword.tsx       # Página para criação de nova senha (Supabase)
+│   ├── ProfileSetup.tsx         # Configuração inicial do casal
+│   ├── Dashboard.tsx            # Painel com estatísticas e atalhos
+│   ├── Calendar.tsx             # Calendário completo de eventos
+│   ├── Travels.tsx              # Planejamento e gestão de viagens
+│   ├── Wishes.tsx               # Lista de desejos compartilhada
+│   ├── Notes.tsx                # Sistema de anotações colaborativas
+│   ├── Photos.tsx               # Galeria de fotos com filtros e modais
+│   ├── Notifications.tsx        # Central de notificações inteligente
+│   ├── SettingsComponent.tsx    # Configurações avançadas do casal
+│   └── ...                      # Subcomponentes auxiliares (forms, modais, indicadores)
+├── context/
+│   └── AppContext.tsx           # Estado global, reducer e persistência
+├── hooks/                       # Hooks customizados (formulários, convites, validações)
+├── types/                       # Definições TypeScript para todos os domínios
+├── utils/                       # Funções utilitárias e validações
+├── supabaseClient.ts            # Cliente configurado do Supabase
+├── App.tsx                      # Entrada principal com roteamento por seções
+└── main.tsx                     # Bootstrap da aplicação
 ```
 
-## 💾 Persistência e Armazenamento de Dados
+## 🔌 Integrações Externas
 
-O aplicativo utiliza uma arquitetura de armazenamento local robusta:
+- **API REST própria**: endpoints `/api/auth/login`, `/api/auth/signup`, `/api/auth/forgot-password` e `/api/profile` para autenticação, cadastro e gestão de perfis.
+- **Supabase Auth**: fluxo de redefinição de senha com verificação de token e atualização de credenciais.
+- **Vercel Analytics**: coleta automática de métricas quando hospedado na Vercel.
 
-### Dados Persistidos
-- **Autenticação**: Estado de login e informações de sessão
-- **Perfis Completos**: Informações detalhadas do casal incluindo fotos
-- **Relacionamento**: Data de início e cálculos temporais
-- **Eventos**: Calendário completo com todos os detalhes
-- **Desejos**: Lista de desejos com status e prioridades
-- **Anotações**: Todas as notas compartilhadas entre o casal
-- **Fotos**: Metadados das imagens e dados base64
-- **Notificações**: Histórico completo de notificações
+> As integrações são configuráveis via variáveis de ambiente, permitindo apontar para diferentes ambientes (desenvolvimento, homologação, produção).
 
-### Estratégia de Armazenamento
-- **localStorage**: Armazenamento principal para todos os dados
-- **Base64 Encoding**: Imagens convertidas para texto para armazenamento local
-- **JSON Serialization**: Estruturas de dados complexas serializadas
-- **Backup Automático**: Dados salvos automaticamente a cada mudança
+## 🔮 Roadmap
 
-## 🎯 Funcionalidades Especiais Expandidas
+- Integração completa com backend (persistência real de eventos, notas e desejos).
+- Upload real de fotos para armazenamento em nuvem.
+- Notificações push e sincronização com Google Calendar.
+- Temas personalizáveis e internacionalização.
+- Exportação/backup em nuvem dos dados do casal.
 
-### Ações Rápidas no Dashboard
-- **Evento Rápido**: Criação simplificada de eventos com dados essenciais
-- **Desejo Rápido**: Adição rápida à lista de desejos com categorização
-- **Anotação Rápida**: Criação instantânea de notas importantes
-- **Foto Rápida**: Upload simulado com descrição para testes
+## 🤝 Contribuição
 
-### Sistema de Configurações Completo
-- **Edição de Perfis**: Interface intuitiva para atualizar todos os dados
-- **Upload de Fotos**: Sistema drag-and-drop para fotos de perfil
-- **Gestão de Relacionamento**: Configuração e cálculo de tempo juntos
-- **Zona de Segurança**: Opções de limpeza de dados com confirmações
+1. Faça um fork do projeto
+2. Crie uma branch: `git checkout -b feature/NovaFeature`
+3. Commit suas alterações: `git commit -m 'feat: adicionar NovaFeature'`
+4. Faça push: `git push origin feature/NovaFeature`
+5. Abra um Pull Request descrevendo suas mudanças
 
-### Experiência Mobile Otimizada
-- **Menu Lateral Responsivo**: Navegação adaptada para mobile com overlay
-- **Modais Responsivos**: Formulários otimizados para toque e usabilidade
-- **Gestos Intuitivos**: Interações naturais em dispositivos móveis
-- **Performance**: Otimizações específicas para dispositivos com recursos limitados
-
-## 🔮 Roadmap de Funcionalidades Futuras
-
-### Melhorias de Backend
-- **API REST**: Persistência real com banco de dados
-- **Autenticação JWT**: Sistema de autenticação robusto e seguro
-- **Upload Real**: Armazenamento de imagens em serviços de nuvem
-- **Sincronização**: Dados sincronizados entre múltiplos dispositivos
-
-### Funcionalidades Avançadas
-- **Lembretes Push**: Notificações do navegador para eventos importantes
-- **Compartilhamento Social**: Exportar eventos e fotos para redes sociais
-- **Temas Personalizados**: Múltiplas paletas de cores e estilos visuais
-- **Backup na Nuvem**: Exportar/importar dados com segurança
-
-### Integrações Externas
-- **Calendário Google**: Sincronização bidirecional de eventos
-- **Redes Sociais**: Compartilhamento automático de momentos especiais
-- **Mapas e Localização**: Geolocalização de eventos e lugares especiais
-- **APIs Climáticas**: Previsão do tempo para eventos futuros
-
-## 🎨 Conceitos de Design Implementados
-
-### Arquitetura de Componentes
-O aplicativo segue uma arquitetura componentizada que promove reutilização e manutenibilidade. Cada componente tem uma responsabilidade específica e bem definida.
-
-### Gerenciamento de Estado
-Utilizamos o padrão Redux-like com useReducer para gerenciar o estado global de forma previsível e escalável.
-
-### Persistência Local
-A estratégia de armazenamento local permite que o aplicativo funcione offline e mantenha os dados entre sessões.
-
-## 🤝 Contribuição e Desenvolvimento
-
-Este projeto foi desenvolvido como demonstração de um aplicativo completo para casais, showcasing modernas práticas de desenvolvimento React.
-
-### Como Contribuir
-1. Fork o projeto no seu repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request com descrição detalhada
-
-### Padrões de Código
-- Seguimos convenções TypeScript rigorosas
-- Utilizamos ESLint para consistência de código
-- Comentários explicativos em código complexo
-- Nomenclatura descritiva e em português para contexto brasileiro
+Padrões importantes:
+- Utilize TypeScript com tipagem explícita e componentes funcionais.
+- Execute `npm run lint` antes de abrir o PR.
+- Prefira nomes descritivos (em português) para manter o contexto do domínio.
 
 ## 📄 Licença
 
-Este projeto é open source e está disponível sob a licença MIT, permitindo uso, modificação e distribuição livre.
+Este projeto é open source sob a licença **MIT**. Sinta-se livre para usar, modificar e distribuir.
 
 ---
 
 **Desenvolvido com 💕 para casais que querem organizar e celebrar seus momentos especiais juntos!**
 
-*Versão 1.5.0 - Agora com galeria de fotos avançada, filtro por calendário e layout mobile otimizado*
+_Versão 1.9.2 – Agora com módulo completo de viagens, convites inteligentes e fluxo de redefinição de senha via Supabase._
