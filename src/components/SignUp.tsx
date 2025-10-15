@@ -9,14 +9,16 @@ interface SignUpProps {
 
 /**
  * Componente de cadastro de nova conta
- * Integrado com a API WeMoment para criar novos usuários
+ * Integrado com a API WeMoment para criar novos usuários com nome, sobrenome e gênero.
  */
 const SignUp: React.FC<SignUpProps> = ({ onBackToLogin }) => {
     const [formData, setFormData] = useState({
-        fullName: '',
+        firstName: '',
+        lastName: '',
         email: '',
         password: '',
         confirmPassword: '',
+        gender: 'male' as 'male' | 'female',
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -26,8 +28,13 @@ const SignUp: React.FC<SignUpProps> = ({ onBackToLogin }) => {
      * Valida os dados do formulário antes de enviar
      */
     const validateForm = (): boolean => {
-        if (formData.fullName.trim().length < 3) {
-            toast.error('O nome completo deve ter pelo menos 3 caracteres');
+        if (formData.firstName.trim().length < 2) {
+            toast.error('O nome deve ter pelo menos 2 caracteres');
+            return false;
+        }
+
+        if (formData.lastName.trim().length < 2) {
+            toast.error('O sobrenome deve ter pelo menos 2 caracteres');
             return false;
         }
 
@@ -62,11 +69,6 @@ const SignUp: React.FC<SignUpProps> = ({ onBackToLogin }) => {
         setIsLoading(true);
 
         try {
-            // Separa o nome completo em firstName e lastName
-            const nameParts = formData.fullName.trim().split(' ');
-            const firstName = nameParts[0];
-            const lastName = nameParts.slice(1).join(' ') || '';
-
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
                 method: 'POST',
                 headers: {
@@ -75,8 +77,9 @@ const SignUp: React.FC<SignUpProps> = ({ onBackToLogin }) => {
                 body: JSON.stringify({
                     email: formData.email,
                     password: formData.password,
-                    firstName: firstName,
-                    lastName: lastName,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    gender: formData.gender,
                 }),
             });
 
@@ -84,16 +87,19 @@ const SignUp: React.FC<SignUpProps> = ({ onBackToLogin }) => {
 
             if (response.ok) {
                 toast.success('Conta criada com sucesso! Verifique seu e-mail para confirmar o cadastro.');
-                // Aguarda 2 segundos antes de voltar ao login
                 setTimeout(() => {
                     onBackToLogin();
                 }, 2000);
             } else {
-                // Mensagens de erro personalizadas baseadas na resposta da API
-                if (data.message) {
+                if (data.error) {
+                    // Trata erros específicos do Supabase, como email já existente
+                    if (data.error.includes('unique constraint')) {
+                        toast.error('Este email já está em uso.');
+                    } else {
+                        toast.error(data.error);
+                    }
+                } else if (data.message) {
                     toast.error(data.message);
-                } else if (response.status === 409) {
-                    toast.error('Este email já está cadastrado');
                 } else {
                     toast.error('Erro ao criar conta. Tente novamente.');
                 }
@@ -125,21 +131,77 @@ const SignUp: React.FC<SignUpProps> = ({ onBackToLogin }) => {
 
                 {/* Formulário */}
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* Nome Completo */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nome Completo
-                        </label>
-                        <div className="relative">
-                            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    {/* Nome e Sobrenome */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Nome
+                            </label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                                <input
+                                    type="text"
+                                    value={formData.firstName}
+                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                                    placeholder="João"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Sobrenome
+                            </label>
                             <input
                                 type="text"
-                                value={formData.fullName}
-                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
-                                placeholder="João Silva"
+                                value={formData.lastName}
+                                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+                                placeholder="Silva"
                                 required
                             />
+                        </div>
+                    </div>
+
+                    {/* Gênero */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Gênero
+                        </label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
+                                    value="male"
+                                    checked={formData.gender === 'male'}
+                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' })}
+                                    className="sr-only"
+                                />
+                                <div className={`w-full p-3 rounded-lg border-2 text-center cursor-pointer transition-all ${formData.gender === 'male'
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                    }`}>
+                                    <span className="text-xl mr-2">👨</span>
+                                    <span className="text-sm font-medium">Masculino</span>
+                                </div>
+                            </label>
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
+                                    value="female"
+                                    checked={formData.gender === 'female'}
+                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' })}
+                                    className="sr-only"
+                                />
+                                <div className={`w-full p-3 rounded-lg border-2 text-center cursor-pointer transition-all ${formData.gender === 'female'
+                                        ? 'border-pink-500 bg-pink-50 text-pink-700'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                    }`}>
+                                    <span className="text-xl mr-2">👩</span>
+                                    <span className="text-sm font-medium">Feminino</span>
+                                </div>
+                            </label>
                         </div>
                     </div>
 
