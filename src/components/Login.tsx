@@ -5,7 +5,7 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import logo from './../assents/Logo.png';
 import SignUp from './SignUp';
-import ForgotPassword from './ForgotPassword'; // Importe o novo componente
+import ForgotPassword from './ForgotPassword';
 
 export default function Login() {
   const { dispatch } = useApp();
@@ -16,14 +16,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSignUp, setShowSignUp] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false); // Novo estado
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Se estiver na tela de cadastro, renderiza o componente SignUp
   if (showSignUp) {
     return <SignUp onBackToLogin={() => setShowSignUp(false)} />;
   }
 
-  // Se estiver na tela de redefinição de senha, renderiza o componente ForgotPassword
   if (showForgotPassword) {
     return <ForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
   }
@@ -33,7 +31,8 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      // 1. Fazer o login para obter o token
+      const loginResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,20 +40,46 @@ export default function Login() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const loginData = await loginResponse.json();
 
-      if (response.ok) {
-        // A API retorna um objeto user e um token
-        const user: User = data.user;
-        const token: string = data.token;
-
-        // Armazena o token no localStorage
+      if (loginResponse.ok) {
+        const token: string = loginData.token;
         localStorage.setItem('authToken', token);
 
-        dispatch({ type: 'LOGIN', payload: { user, token } });
-        toast.success('Login realizado com sucesso!');
+        // 2. Com o token, buscar os dados completos do perfil
+        const profileResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const userProfileData = await profileResponse.json();
+
+        if (profileResponse.ok) {
+            // O userProfileData agora contém firstName, lastName, gender, etc.
+            const user: User = {
+                id: userProfileData.id,
+                email: userProfileData.email,
+                firstName: userProfileData.firstName,
+                lastName: userProfileData.lastName,
+                gender: userProfileData.gender,
+                createdAt: userProfileData.created_at,
+                // Adicione outros campos se necessário, como avatar ou dateOfBirth
+            };
+            
+            // 3. Despachar a action LOGIN com os dados completos do usuário
+            dispatch({ type: 'LOGIN', payload: { user, token } });
+            toast.success('Login realizado com sucesso!');
+        } else {
+             // Se falhar em buscar o perfil, ainda faz o login com dados básicos
+             console.error("Falha ao buscar perfil completo:", userProfileData.error);
+             dispatch({ type: 'LOGIN', payload: { user: loginData.user, token } });
+             toast.error('Login realizado, mas não foi possível carregar o perfil completo.');
+        }
+        
       } else {
-        toast.error(data.message || 'Email ou senha incorretos');
+        toast.error(loginData.error || 'Email ou senha incorretos');
       }
     } catch (err) {
       console.error('Erro no login:', err);
