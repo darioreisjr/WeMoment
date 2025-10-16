@@ -57,7 +57,7 @@ export default function Login() {
         const userProfileData = await profileResponse.json();
 
         if (profileResponse.ok) {
-            // O userProfileData agora contém todos os dados, incluindo o avatar
+            // O userProfileData agora contém todos os dados, incluindo a data de nascimento
             const user: User = {
                 id: userProfileData.id,
                 email: userProfileData.email,
@@ -65,8 +65,8 @@ export default function Login() {
                 lastName: userProfileData.lastName,
                 gender: userProfileData.gender,
                 createdAt: userProfileData.created_at,
-                avatar: userProfileData.avatar, // <-- CORREÇÃO APLICADA AQUI
-                dateOfBirth: userProfileData.dateOfBirth,
+                avatar: userProfileData.avatar,
+                dateOfBirth: userProfileData.dateOfBirth, // CORREÇÃO APLICADA AQUI
             };
             
             // 3. Despachar a action LOGIN com os dados completos do usuário

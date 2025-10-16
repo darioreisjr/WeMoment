@@ -97,6 +97,7 @@ export const PartnerProfileForm: React.FC<PartnerProfileFormProps> = ({
               onChange={(e) => setPartnerForm({ ...partnerForm, email: e.target.value })}
               placeholder="email@parceiro.com"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled
             />
           </div>
           <div>

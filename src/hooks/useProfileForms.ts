@@ -28,18 +28,16 @@ export const useProfileForms = ({ user, partner, relationshipStartDate }: UsePro
   
   const [relationshipDate, setRelationshipDate] = useState(relationshipStartDate || '');
 
-  // ADICIONADO: Sincroniza o estado do formulário quando os dados do usuário/parceiro mudam.
-  // Isso garante que o avatar (e outros dados) seja atualizado na tela após o upload.
   useEffect(() => {
     if (user) {
       setUserForm(prevForm => ({
-        ...prevForm, // Mantém os dados que o usuário pode estar editando
+        ...prevForm,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         email: user.email || '',
         dateOfBirth: user.dateOfBirth || '',
         gender: user.gender || 'male',
-        avatar: user.avatar || '', // Atualiza o avatar com a nova URL
+        avatar: user.avatar || '',
       }));
     }
     if (partner) {

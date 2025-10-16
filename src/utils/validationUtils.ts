@@ -25,4 +25,3 @@ export const validateRelationshipDate = (date: string): boolean => {
   
   return selectedDate <= today;
 };
-

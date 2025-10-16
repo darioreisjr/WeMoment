@@ -3,7 +3,7 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  dateOfBirth?: string; // Nova propriedade: data de nascimento
+  dateOfBirth?: string; // Voltando para dateOfBirth
   gender: 'male' | 'female';
   avatar?: string;
   createdAt: string;
@@ -111,11 +111,11 @@ export interface TravelChecklist {
   id: string;
   item: string;                   // Descrição do item (ex: "Passaporte", "Protetor solar")
   category:
-    | 'bagagem'                   // Itens de bagagem geral
-    | 'documentos'                // Documentos necessários
-    | 'medicamentos'              // Remédios e produtos de saúde
-    | 'eletronicos'               // Eletrônicos e acessórios
-    | 'outros';                   // Outros itens diversos
+  | 'bagagem'                   // Itens de bagagem geral
+  | 'documentos'                // Documentos necessários
+  | 'medicamentos'              // Remédios e produtos de saúde
+  | 'eletronicos'               // Eletrônicos e acessórios
+  | 'outros';                   // Outros itens diversos
   completed: boolean;             // Se o item foi providenciado/completado
   createdAt: string;             // Data de criação do item (ISO string)
 }
@@ -128,12 +128,12 @@ export interface TravelExpense {
   description: string;            // Descrição do gasto (ex: "Passagem aérea", "Hotel")
   amount: number;                 // Valor gasto em reais
   category:
-    | 'transporte'                // Passagens, táxi, aluguel de carro, etc.
-    | 'hospedagem'                // Hotel, pousada, Airbnb, etc.
-    | 'alimentacao'               // Restaurantes, mercado, bebidas
-    | 'atividades'                // Tours, ingressos, passeios
-    | 'compras'                   // Souvenirs, roupas, presentes
-    | 'outros';                   // Outros gastos diversos
+  | 'transporte'                // Passagens, táxi, aluguel de carro, etc.
+  | 'hospedagem'                // Hotel, pousada, Airbnb, etc.
+  | 'alimentacao'               // Restaurantes, mercado, bebidas
+  | 'atividades'                // Tours, ingressos, passeios
+  | 'compras'                   // Souvenirs, roupas, presentes
+  | 'outros';                   // Outros gastos diversos
   date: string;                   // Data do gasto (YYYY-MM-DD)
   createdAt: string;             // Data de registro do gasto (ISO string)
 }
