@@ -87,9 +87,6 @@ export default function SettingsComponent() {
     return { isComplete: missingInfo.length === 0, status: missingInfo.length === 0 ? 'Completo' : 'Informações incompletas', issues: missingInfo };
   };
 
-  // ==================================================================
-  // ATUALIZAÇÃO PRINCIPAL - UPLOAD DE AVATAR
-  // ==================================================================
   const handleAvatarUpload = async (file: File) => {
     const token = state.auth.token;
     if (!token) {
@@ -122,14 +119,14 @@ export default function SettingsComponent() {
         throw new Error(data.error || 'Falha ao enviar o avatar.');
       }
 
-      // Atualiza o estado local e global com a nova URL do avatar
+      // CORREÇÃO: Atualiza o estado global e o formulário local
       if (state.auth.user) {
         const updatedUser: User = {
           ...state.auth.user,
           avatar: data.avatarUrl,
         };
         dispatch({ type: 'UPDATE_USER_PROFILE', payload: updatedUser });
-        setUserForm({ ...userForm, avatar: data.avatarUrl }); // Atualiza o formulário local também
+        setUserForm({ ...userForm, avatar: data.avatarUrl }); // <-- ESTA LINHA É A CHAVE
       }
       
       toast.success('Avatar atualizado com sucesso!', { id: loadingToast });
@@ -148,17 +145,12 @@ export default function SettingsComponent() {
     }
   };
 
-  // Placeholder para o avatar do parceiro, caso seja implementado no futuro
   const handlePartnerAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       toast.error('A atualização do avatar do parceiro ainda não foi implementada.');
-      // Futuramente, aqui iria a lógica para o upload do avatar do parceiro
     }
   };
-  // ==================================================================
-  // FIM DA ATUALIZAÇÃO
-  // ==================================================================
 
   const handleUserDateOfBirthChange = (date: string) => {
     setUserForm({ ...userForm, dateOfBirth: date });
@@ -216,7 +208,6 @@ export default function SettingsComponent() {
                 email: userForm.email,
                 dateOfBirth: userForm.dateOfBirth,
                 gender: userForm.gender,
-                // O avatar já é atualizado na sua própria função, mas garantimos que ele permaneça
                 avatar: userForm.avatar, 
             };
             dispatch({ type: 'UPDATE_USER_PROFILE', payload: updatedUser });
