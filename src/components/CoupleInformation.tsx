@@ -4,6 +4,9 @@ import { UserProfileForm } from './UserProfileForm';
 import { PartnerProfileForm } from './PartnerProfileForm';
 import { RelationshipDateSection } from './RelationshipDateSection';
 
+// ... (interfaces internas permanecem as mesmas)
+
+// Renomeando props para clareza
 interface CoupleInformationProps {
   isEditing: boolean;
   setIsEditing: (editing: boolean) => void;
@@ -13,15 +16,15 @@ interface CoupleInformationProps {
   user: any;
   userForm: any;
   setUserForm: any;
-  userAgeError: string;
-  onUserDateOfBirthChange: (date: string) => void;
+  userAgeError: string; // Mantido
+  onUserDateOfBirthChange: (date: string) => void; // Mantido
   onUserAvatarClick: () => void;
   // Partner form props
   partner: any;
   partnerForm: any;
   setPartnerForm: any;
-  partnerAgeError: string;
-  onPartnerDateOfBirthChange: (date: string) => void;
+  partnerAgeError: string; // Mantido
+  onPartnerDateOfBirthChange: (date: string) => void; // Mantido
   onPartnerAvatarClick: () => void;
   // Relationship date props
   relationshipStartDate: string;

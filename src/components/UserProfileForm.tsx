@@ -89,6 +89,7 @@ export const UserProfileForm: React.FC<UserProfileFormProps> = ({
               onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
               placeholder="exemplo@email.com"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled
             />
           </div>
           <div>

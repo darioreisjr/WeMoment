@@ -22,13 +22,12 @@ import { validateAge, validateRelationshipDate } from '../utils/validationUtils'
 export default function SettingsComponent() {
   const { state, dispatch } = useApp();
   const [isEditing, setIsEditing] = React.useState(false);
-  
-  // Estado para armazenar o arquivo de avatar selecionado para upload posterior
+
   const [avatarFileToUpload, setAvatarFileToUpload] = useState<File | null>(null);
 
   const userAvatarInputRef = useRef<HTMLInputElement>(null);
   const partnerAvatarInputRef = useRef<HTMLInputElement>(null);
-  
+
   const {
     ageErrors,
     relationshipDateError,
@@ -90,7 +89,6 @@ export default function SettingsComponent() {
     return { isComplete: missingInfo.length === 0, status: missingInfo.length === 0 ? 'Completo' : 'Informações incompletas', issues: missingInfo };
   };
 
-  // Função de upload movida para ser chamada pelo handleSave
   const uploadAvatar = async (file: File): Promise<string | null> => {
     const token = state.auth.token;
     if (!token) {
@@ -129,7 +127,6 @@ export default function SettingsComponent() {
     }
   };
   
-  // Atualiza o estado local para preview da imagem
   const handleUserAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -144,10 +141,7 @@ export default function SettingsComponent() {
   };
 
   const handlePartnerAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      toast.error('A atualização do avatar do parceiro ainda não foi implementada.');
-    }
+    toast.error('A atualização do avatar do parceiro ainda não foi implementada.');
   };
 
   const handleUserDateOfBirthChange = (date: string) => {
@@ -181,19 +175,16 @@ export default function SettingsComponent() {
     
     let newAvatarUrl = userForm.avatar;
 
-    // 1. Se uma nova imagem foi selecionada, faça o upload primeiro
     if (avatarFileToUpload) {
         const uploadedUrl = await uploadAvatar(avatarFileToUpload);
         if (uploadedUrl) {
             newAvatarUrl = uploadedUrl;
         } else {
-            // Se o upload falhar, interrompe o processo de salvar
             toast.error('Não foi possível salvar devido a um erro no upload da imagem.', { id: loadingToast });
             return;
         }
     }
 
-    // 2. Prossiga para salvar os dados do perfil (incluindo a nova URL do avatar, se houver)
     try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
             method: 'PATCH',
@@ -201,20 +192,20 @@ export default function SettingsComponent() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            // Envia todos os dados, incluindo a nova URL do avatar
             body: JSON.stringify({
                 firstName: userForm.firstName,
                 lastName: userForm.lastName,
                 gender: userForm.gender,
-                avatar_url: newAvatarUrl // O backend espera 'avatar_url'
+                avatar_url: newAvatarUrl,
+                date_of_birth: userForm.dateOfBirth || null
             })
         });
 
         if (!response.ok) {
-            throw new Error('Falha ao salvar os dados do perfil.');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Falha ao salvar os dados do perfil.');
         }
 
-        // 3. Atualize o estado global com os novos dados
         if (state.auth.user) {
             const updatedUser: User = {
                 ...state.auth.user,
@@ -224,7 +215,7 @@ export default function SettingsComponent() {
                 email: userForm.email,
                 dateOfBirth: userForm.dateOfBirth,
                 gender: userForm.gender,
-                avatar: newAvatarUrl, // Use a URL final (nova ou antiga)
+                avatar: newAvatarUrl,
             };
             dispatch({ type: 'UPDATE_USER_PROFILE', payload: updatedUser });
         }
@@ -249,18 +240,19 @@ export default function SettingsComponent() {
     
         toast.success('Perfis atualizados com sucesso!', { id: loadingToast });
         setIsEditing(false);
-        setAvatarFileToUpload(null); // Limpa o arquivo após o sucesso
+        setAvatarFileToUpload(null);
 
     } catch (error) {
         console.error("Erro ao salvar:", error);
-        toast.error('Não foi possível salvar as alterações. Tente novamente.', { id: loadingToast });
+        const errorMessage = error instanceof Error ? error.message : 'Não foi possível salvar as alterações. Tente novamente.';
+        toast.error(errorMessage, { id: loadingToast });
     }
   };
 
   const handleCancelEdit = () => {
     resetForms();
     clearErrors();
-    setAvatarFileToUpload(null); // Limpa qualquer arquivo selecionado
+    setAvatarFileToUpload(null);
     setIsEditing(false);
   };
 
