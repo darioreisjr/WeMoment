@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { User } from '../types';
 import { Settings } from 'lucide-react';
@@ -23,6 +23,9 @@ export default function SettingsComponent() {
   const { state, dispatch } = useApp();
   const [isEditing, setIsEditing] = React.useState(false);
   
+  // Estado para armazenar o arquivo de avatar selecionado para upload posterior
+  const [avatarFileToUpload, setAvatarFileToUpload] = useState<File | null>(null);
+
   const userAvatarInputRef = useRef<HTMLInputElement>(null);
   const partnerAvatarInputRef = useRef<HTMLInputElement>(null);
   
@@ -87,22 +90,18 @@ export default function SettingsComponent() {
     return { isComplete: missingInfo.length === 0, status: missingInfo.length === 0 ? 'Completo' : 'Informações incompletas', issues: missingInfo };
   };
 
-  const handleAvatarUpload = async (file: File) => {
+  // Função de upload movida para ser chamada pelo handleSave
+  const uploadAvatar = async (file: File): Promise<string | null> => {
     const token = state.auth.token;
     if (!token) {
       toast.error('Sessão expirada. Faça login novamente.');
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor, selecione apenas arquivos de imagem.');
-      return;
+      return null;
     }
 
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const loadingToast = toast.loading('Enviando imagem...');
+    const loadingToast = toast.loading('Enviando nova imagem...');
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/avatar`, {
@@ -118,30 +117,29 @@ export default function SettingsComponent() {
       if (!response.ok) {
         throw new Error(data.error || 'Falha ao enviar o avatar.');
       }
-
-      // CORREÇÃO: Atualiza o estado global e o formulário local
-      if (state.auth.user) {
-        const updatedUser: User = {
-          ...state.auth.user,
-          avatar: data.avatarUrl,
-        };
-        dispatch({ type: 'UPDATE_USER_PROFILE', payload: updatedUser });
-        setUserForm({ ...userForm, avatar: data.avatarUrl }); // <-- ESTA LINHA É A CHAVE
-      }
       
-      toast.success('Avatar atualizado com sucesso!', { id: loadingToast });
+      toast.success('Imagem enviada com sucesso!', { id: loadingToast });
+      return data.avatarUrl;
 
     } catch (error) {
       console.error("Erro no upload do avatar:", error);
       const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro desconhecido.';
       toast.error(errorMessage, { id: loadingToast });
+      return null;
     }
   };
   
+  // Atualiza o estado local para preview da imagem
   const handleUserAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleAvatarUpload(file);
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor, selecione apenas arquivos de imagem.');
+        return;
+      }
+      setAvatarFileToUpload(file);
+      const previewUrl = URL.createObjectURL(file);
+      setUserForm({ ...userForm, avatar: previewUrl });
     }
   };
 
@@ -180,7 +178,22 @@ export default function SettingsComponent() {
     }
 
     const loadingToast = toast.loading('Salvando alterações...');
+    
+    let newAvatarUrl = userForm.avatar;
 
+    // 1. Se uma nova imagem foi selecionada, faça o upload primeiro
+    if (avatarFileToUpload) {
+        const uploadedUrl = await uploadAvatar(avatarFileToUpload);
+        if (uploadedUrl) {
+            newAvatarUrl = uploadedUrl;
+        } else {
+            // Se o upload falhar, interrompe o processo de salvar
+            toast.error('Não foi possível salvar devido a um erro no upload da imagem.', { id: loadingToast });
+            return;
+        }
+    }
+
+    // 2. Prossiga para salvar os dados do perfil (incluindo a nova URL do avatar, se houver)
     try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
             method: 'PATCH',
@@ -188,10 +201,12 @@ export default function SettingsComponent() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
+            // Envia todos os dados, incluindo a nova URL do avatar
             body: JSON.stringify({
                 firstName: userForm.firstName,
                 lastName: userForm.lastName,
-                gender: userForm.gender
+                gender: userForm.gender,
+                avatar_url: newAvatarUrl // O backend espera 'avatar_url'
             })
         });
 
@@ -199,6 +214,7 @@ export default function SettingsComponent() {
             throw new Error('Falha ao salvar os dados do perfil.');
         }
 
+        // 3. Atualize o estado global com os novos dados
         if (state.auth.user) {
             const updatedUser: User = {
                 ...state.auth.user,
@@ -208,7 +224,7 @@ export default function SettingsComponent() {
                 email: userForm.email,
                 dateOfBirth: userForm.dateOfBirth,
                 gender: userForm.gender,
-                avatar: userForm.avatar, 
+                avatar: newAvatarUrl, // Use a URL final (nova ou antiga)
             };
             dispatch({ type: 'UPDATE_USER_PROFILE', payload: updatedUser });
         }
@@ -233,6 +249,7 @@ export default function SettingsComponent() {
     
         toast.success('Perfis atualizados com sucesso!', { id: loadingToast });
         setIsEditing(false);
+        setAvatarFileToUpload(null); // Limpa o arquivo após o sucesso
 
     } catch (error) {
         console.error("Erro ao salvar:", error);
@@ -243,6 +260,7 @@ export default function SettingsComponent() {
   const handleCancelEdit = () => {
     resetForms();
     clearErrors();
+    setAvatarFileToUpload(null); // Limpa qualquer arquivo selecionado
     setIsEditing(false);
   };
 
