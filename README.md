@@ -1,6 +1,6 @@
 # 💕 WeMoment
 
-Aplicativo web moderno e romântico para casais registrarem, planejarem e celebrarem seus momentos especiais. Desenvolvido com React + TypeScript e foco em experiência mobile, o WeMoment reúne painel inteligente, calendário interativo, diário de desejos e memórias compartilhadas.
+Aplicativo web moderno e romântico para casais registrarem, planejarem e celebrarem seus momentos especiais. Desenvolvido com React + TypeScript e foco em experiência mobile, o WeMoment reúne painel inteligente, calendário interativo, diário de desejos e memórias compartilhadas..
 
 ## 📚 Sumário
 
