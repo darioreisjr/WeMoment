@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { AppState, Action, Photo } from '../types';
+import { AppState, Action, Photo, Event } from '../types';
 
 // Função para gerar fotos mockup para demonstração
 const generateMockPhotos = (): Photo[] => {
@@ -171,6 +171,12 @@ function appReducer(state: AppState, action: Action): AppState {
       };
 
     // ========== EVENTS ACTIONS ==========
+    case 'SET_EVENTS':
+      return {
+        ...state,
+        events: action.payload,
+      };
+      
     case 'ADD_EVENT':
       return {
         ...state,
@@ -371,6 +377,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'LOAD_MOCK_DATA' });
     }
   }, []);
+  
+  // Novo Effect para buscar eventos da API quando autenticado
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (state.auth.isAuthenticated && state.auth.token) {
+        console.log('🚀 Buscando eventos da API...');
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/events`, {
+            headers: {
+              'Authorization': `Bearer ${state.auth.token}`,
+            },
+          });
+          if (response.ok) {
+            const events: Event[] = await response.json();
+            dispatch({ type: 'SET_EVENTS', payload: events });
+            console.log('✅ Eventos carregados da API:', events);
+          } else {
+            console.error('Falha ao buscar eventos:', response.statusText);
+          }
+        } catch (error) {
+          console.error('Erro ao conectar com a API de eventos:', error);
+        }
+      }
+    };
+
+    fetchEvents();
+  }, [state.auth.isAuthenticated, state.auth.token]);
+
 
   // Effect para salvar dados no localStorage sempre que o estado mudar
   useEffect(() => {

@@ -35,7 +35,7 @@ export default function Calendar() {
 
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'July', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
   const getEventsForDate = (date: Date) => {
@@ -74,111 +74,91 @@ export default function Calendar() {
     setShowEventModal(true);
   };
 
-  const handleDeleteEvent = (eventId: string) => {
+  const handleDeleteEvent = async (eventId: string) => {
     if (window.confirm('Tem certeza que deseja excluir este evento?')) {
-      dispatch({ type: 'DELETE_EVENT', payload: eventId });
-      
-      // Substituído por toast notification
-      toast.success('Evento excluído com sucesso! 🗑️', {
-        duration: 3000,
-      });
-      
-      // Add notification
-      dispatch({
-        type: 'ADD_NOTIFICATION',
-        payload: {
-          id: Date.now().toString(),
-          title: 'Evento excluído',
-          message: `O evento foi removido do calendário`,
-          type: 'event',
-          date: new Date().toISOString(),
-          read: false,
-          createdAt: new Date().toISOString(),
-        },
-      });
-      
-      setShowEventDetailsModal(false);
+      const token = state.auth.token;
+      if (!token) {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/events/${eventId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao excluir o evento.');
+        }
+
+        dispatch({ type: 'DELETE_EVENT', payload: eventId });
+        toast.success('Evento excluído com sucesso! 🗑️');
+        setShowEventDetailsModal(false);
+
+      } catch (error) {
+        console.error('Erro ao excluir evento:', error);
+        toast.error((error as Error).message || 'Não foi possível excluir o evento.');
+      }
     }
   };
 
-  const handleEventSubmit = (e: React.FormEvent) => {
+  const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate || !state.auth.user) return;
-
-    if (editingEvent) {
-      // Atualizar evento existente
-      const updatedEvent: Event = {
-        ...editingEvent,
-        title: eventForm.title,
-        description: eventForm.description,
-        location: eventForm.location,
-        type: eventForm.type,
-        date: selectedDate.toISOString(),
-      };
-
-      dispatch({ type: 'UPDATE_EVENT', payload: updatedEvent });
-      
-      // Substituído por toast notification
-      toast.success(`Evento "${eventForm.title}" atualizado! ✏️`, {
-        duration: 3000,
-      });
-      
-      // Add notification
-      dispatch({
-        type: 'ADD_NOTIFICATION',
-        payload: {
-          id: Date.now().toString(),
-          title: 'Evento atualizado!',
-          message: `${eventForm.title} foi atualizado com sucesso`,
-          type: 'event',
-          date: selectedDate.toISOString(),
-          read: false,
-          createdAt: new Date().toISOString(),
-        },
-      });
-    } else {
-      // Criar novo evento
-      const newEvent: Event = {
-        id: Date.now().toString(),
-        title: eventForm.title,
-        description: eventForm.description,
-        location: eventForm.location,
-        type: eventForm.type,
-        date: selectedDate.toISOString(),
-        createdBy: state.auth.user.id,
-        createdAt: new Date().toISOString(),
-      };
-
-      dispatch({ type: 'ADD_EVENT', payload: newEvent });
-      
-      // Substituído por toast notification
-      toast.success(`Evento "${eventForm.title}" criado! 📅`, {
-        duration: 3000,
-      });
-      
-      // Add notification
-      dispatch({
-        type: 'ADD_NOTIFICATION',
-        payload: {
-          id: Date.now().toString(),
-          title: 'Novo evento criado!',
-          message: `${eventForm.title} foi adicionado ao calendário para ${selectedDate.toLocaleDateString('pt-BR')}`,
-          type: 'event',
-          date: selectedDate.toISOString(),
-          read: false,
-          createdAt: new Date().toISOString(),
-        },
-      });
+    if (!selectedDate || !state.auth.user || !state.auth.token) {
+      toast.error('Erro de autenticação. Por favor, faça login novamente.');
+      return;
     }
 
-    setShowEventModal(false);
-    setEditingEvent(null);
-    setEventForm({
-      title: '',
-      description: '',
-      location: '',
-      type: 'date',
-    });
+    const eventPayload = {
+      title: eventForm.title,
+      description: eventForm.description,
+      location: eventForm.location,
+      type: eventForm.type,
+      date: selectedDate.toISOString(),
+    };
+
+    const isEditing = !!editingEvent;
+    const url = isEditing
+      ? `${import.meta.env.VITE_API_URL}/api/events/${editingEvent.id}`
+      : `${import.meta.env.VITE_API_URL}/api/events`;
+    
+    const method = isEditing ? 'PUT' : 'POST';
+
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.auth.token}`,
+        },
+        body: JSON.stringify(eventPayload),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || `Falha ao ${isEditing ? 'atualizar' : 'criar'} o evento.`);
+      }
+
+      if (isEditing) {
+        dispatch({ type: 'UPDATE_EVENT', payload: responseData });
+        toast.success(`Evento "${responseData.title}" atualizado! ✏️`);
+      } else {
+        dispatch({ type: 'ADD_EVENT', payload: responseData });
+        toast.success(`Evento "${responseData.title}" criado! 📅`);
+      }
+
+      setShowEventModal(false);
+      setEditingEvent(null);
+      setEventForm({ title: '', description: '', location: '', type: 'date' });
+
+    } catch (error) {
+      console.error(`Erro ao ${isEditing ? 'atualizar' : 'criar'} evento:`, error);
+      toast.error((error as Error).message || `Não foi possível ${isEditing ? 'atualizar' : 'criar'} o evento.`);
+    }
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
@@ -201,19 +181,6 @@ export default function Calendar() {
         return 'bg-purple-500';
       default:
         return 'bg-gray-500';
-    }
-  };
-
-  const getEventTypeColorLight = (type: Event['type']) => {
-    switch (type) {
-      case 'anniversary':
-        return 'bg-rose-100 hover:bg-rose-200';
-      case 'trip':
-        return 'bg-blue-100 hover:bg-blue-200';
-      case 'date':
-        return 'bg-purple-100 hover:bg-purple-200';
-      default:
-        return 'bg-gray-100 hover:bg-gray-200';
     }
   };
 
@@ -370,7 +337,7 @@ export default function Calendar() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Criado por</label>
                 <p className="text-gray-600">
-                  {state.auth.user?.id === selectedEvent.createdBy ? 
+                  {state.auth.user?.id === selectedEvent.user_id ? 
                     `${state.auth.user?.firstName} ${state.auth.user?.lastName}` : 
                     `${state.auth.partner?.firstName} ${state.auth.partner?.lastName}`
                   }

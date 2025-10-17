@@ -33,13 +33,13 @@ export interface InviteCode {
 
 export interface Event {
   id: string;
+  user_id: string; // Adicionado para corresponder ao banco de dados
   title: string;
   description: string;
   date: string;
   location?: string;
   type: 'date' | 'anniversary' | 'trip' | 'other';
-  createdBy: string;
-  createdAt: string;
+  created_at: string; // Renomeado de createdAt
 }
 
 export interface WishItem {
@@ -166,6 +166,7 @@ export type Action =
   | { type: 'GENERATE_INVITE_CODE'; payload: InviteCode }
   | { type: 'USE_INVITE_CODE'; payload: { code: string; user: User } }
   | { type: 'INVALIDATE_INVITE_CODE'; payload: string }
+  | { type: 'SET_EVENTS'; payload: Event[] } // Nova action para carregar eventos
   | { type: 'ADD_EVENT'; payload: Event }
   | { type: 'UPDATE_EVENT'; payload: Event }
   | { type: 'DELETE_EVENT'; payload: string }

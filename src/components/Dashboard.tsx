@@ -121,32 +121,55 @@ export default function Dashboard() {
   const relationshipTime = getRelationshipTime();
 
   // Quick Actions Handlers
-  const handleQuickEvent = (e: React.FormEvent) => {
+  const handleQuickEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickEventForm.title.trim()) {
       toast.error('Título é obrigatório!');
       return;
     }
+    if (!state.auth.token) {
+      toast.error('Sessão expirada. Faça login novamente.');
+      return;
+    }
 
-    const newEvent: Event = {
-      id: Date.now().toString(),
+    const eventPayload = {
       title: quickEventForm.title.trim(),
       description: quickEventForm.description.trim(),
       date: quickEventForm.date,
       type: quickEventForm.type,
-      createdBy: state.auth.user?.id || '',
-      createdAt: new Date().toISOString(),
+      location: '', // Adicionado para completar a interface
     };
 
-    dispatch({ type: 'ADD_EVENT', payload: newEvent });
-    toast.success('Evento adicionado!');
-    setQuickEventForm({
-      title: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-      type: 'date',
-    });
-    setShowQuickEventModal(false);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.auth.token}`,
+        },
+        body: JSON.stringify(eventPayload),
+      });
+
+      const newEvent = await response.json();
+
+      if (!response.ok) {
+        throw new Error(newEvent.error || 'Falha ao criar o evento.');
+      }
+
+      dispatch({ type: 'ADD_EVENT', payload: newEvent });
+      toast.success('Evento adicionado!');
+      setQuickEventForm({
+        title: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+        type: 'date',
+      });
+      setShowQuickEventModal(false);
+
+    } catch (error) {
+      console.error('Erro ao criar evento rápido:', error);
+      toast.error((error as Error).message || 'Não foi possível criar o evento.');
+    }
   };
 
   const handleQuickWish = (e: React.FormEvent) => {
