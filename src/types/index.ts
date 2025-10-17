@@ -3,11 +3,11 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  dateOfBirth?: string; // Voltando para dateOfBirth
+  dateOfBirth?: string;
   gender: 'male' | 'female';
   avatar?: string;
   createdAt: string;
-  name?: string; // Mantido para compatibilidade
+  name?: string;
 }
 
 export interface AuthState {
@@ -15,19 +15,19 @@ export interface AuthState {
   user: User | null;
   partner: User | null;
   relationshipStartDate?: string;
-  inviteCode?: string; // Código de convite gerado
-  isCoupleFull: boolean; // Indica se o casal já está completo (2 pessoas)
-  token?: string; // Adicionado para armazenar o token de autenticação
+  inviteCode?: string;
+  isCoupleFull: boolean;
+  token?: string;
 }
 
 export interface InviteCode {
   id: string;
   code: string;
-  createdBy: string; // ID do usuário que criou o convite
+  createdBy: string;
   createdAt: string;
   expiresAt: string;
   used: boolean;
-  usedBy?: string; // ID do usuário que usou o convite
+  usedBy?: string;
   usedAt?: string;
 }
 
@@ -40,6 +40,7 @@ export interface Event {
   type: 'date' | 'anniversary' | 'trip' | 'other';
   createdBy: string;
   createdAt: string;
+  couple_id?: string; // Adicionado para referência do backend
 }
 
 export interface WishItem {
@@ -51,6 +52,7 @@ export interface WishItem {
   completed: boolean;
   createdBy: string;
   createdAt: string;
+  couple_id?: string; // Adicionado para referência do backend
 }
 
 export interface Note {
@@ -60,6 +62,7 @@ export interface Note {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
+  couple_id?: string; // Adicionado para referência do backend
 }
 
 export interface Photo {
@@ -70,6 +73,7 @@ export interface Photo {
   date: string;
   uploadedBy: string;
   createdAt: string;
+  couple_id?: string; // Adicionado para referência do backend
 }
 
 export interface Notification {
@@ -82,65 +86,41 @@ export interface Notification {
   createdAt: string;
 }
 
-// ==================== NOVAS INTERFACES PARA VIAGENS ====================
-
-/**
- * Interface principal para representar uma viagem completa
- */
 export interface Travel {
   id: string;
-  name: string;                    // Nome da viagem (ex: "Lua de mel em Paris")
-  destination: string;             // Destino da viagem (ex: "Paris, França")
-  startDate: string;              // Data de início (ISO string)
-  endDate: string;                // Data de fim (ISO string)
-  description: string;            // Descrição detalhada da viagem
-  estimatedBudget: number;        // Orçamento estimado em reais
-  participants: string[];         // IDs dos participantes (usuário e parceiro)
-  checklist: TravelChecklist[];  // Lista de itens para levar/fazer
-  expenses: TravelExpense[];      // Controle de gastos da viagem
-  photos: Photo[];               // Fotos específicas da viagem
-  createdBy: string;             // ID de quem criou a viagem
-  createdAt: string;             // Data de criação (ISO string)
-  updatedAt: string;             // Data da última atualização (ISO string)
+  name: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  estimatedBudget: number;
+  participants: string[];
+  checklist: TravelChecklist[];
+  expenses: TravelExpense[];
+  photos: Photo[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  couple_id?: string; // Adicionado para referência do backend
 }
 
-/**
- * Interface para itens do checklist de uma viagem
- */
 export interface TravelChecklist {
   id: string;
-  item: string;                   // Descrição do item (ex: "Passaporte", "Protetor solar")
-  category:
-  | 'bagagem'                   // Itens de bagagem geral
-  | 'documentos'                // Documentos necessários
-  | 'medicamentos'              // Remédios e produtos de saúde
-  | 'eletronicos'               // Eletrônicos e acessórios
-  | 'outros';                   // Outros itens diversos
-  completed: boolean;             // Se o item foi providenciado/completado
-  createdAt: string;             // Data de criação do item (ISO string)
+  item: string;
+  category: | 'bagagem' | 'documentos' | 'medicamentos' | 'eletronicos' | 'outros';
+  completed: boolean;
+  createdAt: string;
 }
 
-/**
- * Interface para controle de gastos/despesas da viagem
- */
 export interface TravelExpense {
   id: string;
-  description: string;            // Descrição do gasto (ex: "Passagem aérea", "Hotel")
-  amount: number;                 // Valor gasto em reais
-  category:
-  | 'transporte'                // Passagens, táxi, aluguel de carro, etc.
-  | 'hospedagem'                // Hotel, pousada, Airbnb, etc.
-  | 'alimentacao'               // Restaurantes, mercado, bebidas
-  | 'atividades'                // Tours, ingressos, passeios
-  | 'compras'                   // Souvenirs, roupas, presentes
-  | 'outros';                   // Outros gastos diversos
-  date: string;                   // Data do gasto (YYYY-MM-DD)
-  createdAt: string;             // Data de registro do gasto (ISO string)
+  description: string;
+  amount: number;
+  category: | 'transporte' | 'hospedagem' | 'alimentacao' | 'atividades' | 'compras' | 'outros';
+  date: string;
+  createdAt: string;
 }
 
-/**
- * Estado global da aplicação incluindo viagens
- */
 export interface AppState {
   auth: AuthState;
   events: Event[];
@@ -149,21 +129,27 @@ export interface AppState {
   photos: Photo[];
   notifications: Notification[];
   inviteCodes: InviteCode[];
-  travels: Travel[];              // Nova propriedade para viagens
+  travels: Travel[];
 }
 
-/**
- * Actions do reducer incluindo ações para viagens
- */
+// Objeto com todos os dados compartilhados que virão da API
+interface SharedData {
+  events: Event[];
+  travels: Travel[];
+  wishItems: WishItem[];
+  notes: Note[];
+  photos: Photo[];
+}
+
 export type Action =
-  // Actions existentes
-  | { type: 'LOGIN'; payload: { user: User; partner?: User; token?: string } }
+  // ATUALIZADO: A action de LOGIN agora espera a estrutura completa da API
+  | { type: 'LOGIN'; payload: { user: User; partner?: User | null; token: string; sharedData?: SharedData } }
   | { type: 'LOGOUT' }
   | { type: 'SET_PARTNER'; payload: User }
   | { type: 'UPDATE_USER_PROFILE'; payload: User }
   | { type: 'UPDATE_PARTNER_PROFILE'; payload: User }
   | { type: 'SET_RELATIONSHIP_START_DATE'; payload: string }
-  | { type: 'GENERATE_INVITE_CODE'; payload: InviteCode }
+  | { type: 'GENERATE_INVITE_CODE'; payload: InviteCode } // Será ajustado para apenas receber o código
   | { type: 'USE_INVITE_CODE'; payload: { code: string; user: User } }
   | { type: 'INVALIDATE_INVITE_CODE'; payload: string }
   | { type: 'ADD_EVENT'; payload: Event }
@@ -182,7 +168,6 @@ export type Action =
   | { type: 'MARK_NOTIFICATION_READ'; payload: string }
   | { type: 'LOAD_DATA'; payload: AppState }
   | { type: 'LOAD_MOCK_DATA' }
-  // Novas actions para viagens
-  | { type: 'ADD_TRAVEL'; payload: Travel }           // Adicionar nova viagem
-  | { type: 'UPDATE_TRAVEL'; payload: Travel }        // Atualizar viagem existente
-  | { type: 'DELETE_TRAVEL'; payload: string };       // Remover viagem (por ID)
+  | { type: 'ADD_TRAVEL'; payload: Travel }
+  | { type: 'UPDATE_TRAVEL'; payload: Travel }
+  | { type: 'DELETE_TRAVEL'; payload: string };

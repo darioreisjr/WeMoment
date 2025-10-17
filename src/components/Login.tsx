@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { User } from '../types';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import logo from './../assents/Logo.png';
@@ -29,10 +28,12 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    const loadingToast = toast.loading('Entrando...');
 
     try {
-      // 1. Fazer o login para obter o token
-      const loginResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      // CORREÇÃO: Usando caminho relativo para o proxy.
+      // O Vite (em dev) ou a Vercel (em prod) irão redirecionar isso para a sua API.
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,51 +41,29 @@ export default function Login() {
         body: JSON.stringify(formData),
       });
 
-      const loginData = await loginResponse.json();
+      const data = await response.json();
 
-      if (loginResponse.ok) {
-        const token: string = loginData.token;
-        localStorage.setItem('authToken', token);
-
-        // 2. Com o token, buscar os dados completos do perfil
-        const profileResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const userProfileData = await profileResponse.json();
-
-        if (profileResponse.ok) {
-            // O userProfileData agora contém todos os dados, incluindo a data de nascimento
-            const user: User = {
-                id: userProfileData.id,
-                email: userProfileData.email,
-                firstName: userProfileData.firstName,
-                lastName: userProfileData.lastName,
-                gender: userProfileData.gender,
-                createdAt: userProfileData.created_at,
-                avatar: userProfileData.avatar,
-                dateOfBirth: userProfileData.dateOfBirth, // CORREÇÃO APLICADA AQUI
-            };
-            
-            // 3. Despachar a action LOGIN com os dados completos do usuário
-            dispatch({ type: 'LOGIN', payload: { user, token } });
-            toast.success('Login realizado com sucesso!');
-        } else {
-             // Se falhar em buscar o perfil, ainda faz o login com dados básicos
-             console.error("Falha ao buscar perfil completo:", userProfileData.error);
-             dispatch({ type: 'LOGIN', payload: { user: loginData.user, token } });
-             toast.error('Login realizado, mas não foi possível carregar o perfil completo.');
-        }
-        
-      } else {
-        toast.error(loginData.error || 'Email ou senha incorretos');
+      // A verificação de 'response.ok' é importante para saber se a requisição foi bem-sucedida (status 2xx).
+      if (!response.ok) {
+        // Se a resposta não foi bem-sucedida, o erro virá no 'data.error' da nossa API.
+        throw new Error(data.error || 'Falha no login. Verifique seus dados.');
       }
-    } catch (err) {
-      console.error('Erro no login:', err);
-      toast.error('Não foi possível conectar ao servidor. Tente novamente mais tarde.');
+      
+      // Se a resposta foi OK, despachamos a action de LOGIN com todos os dados.
+      dispatch({
+        type: 'LOGIN',
+        payload: {
+          user: data.user,
+          partner: data.partner,
+          token: data.token,
+          sharedData: data.sharedData
+        }
+      });
+      toast.success('Login realizado com sucesso!', { id: loadingToast });
+
+    } catch (err: any) {
+      // O 'err.message' agora exibirá o erro vindo da API ou um erro de rede.
+      toast.error(err.message || 'Não foi possível conectar ao servidor.', { id: loadingToast });
     } finally {
       setIsLoading(false);
     }
@@ -154,17 +133,7 @@ export default function Login() {
                      hover:from-rose-600 hover:to-pink-700 transform hover:scale-[1.02] transition-all duration-200 
                      shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {isLoading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Entrando...
-              </span>
-            ) : (
-              'Entrar'
-            )}
+            {isLoading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 

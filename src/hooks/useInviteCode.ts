@@ -1,83 +1,100 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { InviteCode, User } from '../types';
+import toast from 'react-hot-toast';
 
 export const useInviteCode = () => {
   const { state, dispatch } = useApp();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteCodeInput, setInviteCodeInput] = useState('');
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const generateInviteCode = () => {
+  /**
+   * Função para gerar um código de convite chamando a API.
+   * Isso cria a entidade 'couples' no backend.
+   */
+  const generateInviteCode = async () => {
+    const token = state.auth.token;
+    if (!token) {
+      toast.error("Sessão inválida. Por favor, faça login novamente.");
+      return;
+    }
+    
     if (state.auth.partner) {
-      alert('O casal já está completo! Apenas duas pessoas podem fazer parte do perfil.');
+      toast.error('O casal já está completo!');
       return;
     }
 
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const inviteCode: InviteCode = {
-      id: Date.now().toString(),
-      code,
-      createdBy: state.auth.user?.id || '',
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      used: false,
-    };
+    const toastId = toast.loading("Gerando código de convite...");
 
-    dispatch({ type: 'GENERATE_INVITE_CODE', payload: inviteCode });
-    setShowInviteModal(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/invite/generate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Convite gerado com sucesso!", { id: toastId });
+        setGeneratedCode(data.inviteCode);
+        setShowInviteModal(true);
+      } else {
+        throw new Error(data.error || "Não foi possível gerar o convite.");
+      }
+    } catch (error: any) {
+      toast.error(error.message, { id: toastId });
+    }
   };
 
-  const useInviteCodeFunc = () => {
+  /**
+   * Função para usar um código de convite e vincular a conta, chamando a API.
+   */
+  const useInviteCodeFunc = async () => {
+    const token = state.auth.token;
+    if (!token) {
+      toast.error("Sessão inválida. Por favor, faça login novamente.");
+      return;
+    }
     if (!inviteCodeInput.trim()) {
-      alert('Por favor, digite um código de convite.');
+      toast.error("Por favor, digite um código de convite.");
       return;
     }
 
-    const validCode = state.inviteCodes.find(
-      code => code.code === inviteCodeInput.toUpperCase() && 
-              !code.used && 
-              new Date(code.expiresAt) > new Date()
-    );
+    const toastId = toast.loading("Vinculando contas...");
+    try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/invite/accept`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ code: inviteCodeInput })
+        });
 
-    if (!validCode) {
-      alert('Código de convite inválido ou expirado.');
-      return;
+        const data = await response.json();
+
+        if (response.ok) {
+            toast.success("Contas vinculadas com sucesso! Faça login novamente para sincronizar.", { id: toastId, duration: 4000 });
+            // Força o logout para que o usuário faça login novamente e carregue os novos dados do casal
+            setTimeout(() => {
+                dispatch({ type: 'LOGOUT' });
+            }, 2000);
+        } else {
+            throw new Error(data.error || "Código inválido, expirado ou já utilizado.");
+        }
+    } catch (error: any) {
+        toast.error(error.message, { id: toastId });
     }
-
-    const newPartner: User = {
-      id: Date.now().toString(),
-      firstName: 'Novo',
-      lastName: 'Parceiro',
-      email: '',
-      dateOfBirth: '',
-      gender: state.auth.user?.gender === 'male' ? 'female' : 'male',
-      createdAt: new Date().toISOString(),
-    };
-
-    dispatch({ type: 'USE_INVITE_CODE', payload: { code: validCode.code, user: newPartner } });
-    
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: {
-        id: Date.now().toString(),
-        title: 'Parceiro(a) Adicionado!',
-        message: `${newPartner.firstName} ${newPartner.lastName} se juntou ao seu perfil de casal! 💕`,
-        type: 'achievement',
-        date: new Date().toISOString(),
-        read: false,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    setInviteCodeInput('');
-    alert('Parceiro(a) adicionado com sucesso!');
   };
 
   const copyInviteCode = () => {
-    if (state.auth.inviteCode) {
-      navigator.clipboard.writeText(state.auth.inviteCode);
+    if (generatedCode) {
+      navigator.clipboard.writeText(generatedCode);
       setCopiedCode(true);
+      toast.success("Código copiado!");
       setTimeout(() => setCopiedCode(false), 2000);
     }
   };
@@ -87,6 +104,7 @@ export const useInviteCode = () => {
     setShowInviteModal,
     inviteCodeInput,
     setInviteCodeInput,
+    generatedCode,
     copiedCode,
     generateInviteCode,
     useInviteCodeFunc,

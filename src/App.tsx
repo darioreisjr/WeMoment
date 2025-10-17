@@ -4,7 +4,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { AppProvider, useApp } from './context/AppContext';
 import Layout from './components/Layout';
 import Login from './components/Login';
-import ProfileSetup from './components/ProfileSetup';
+import ProfileSetup from './components/ProfileSetup'; // Manteremos o import caso seja usado em outro fluxo
 import Dashboard from './components/Dashboard';
 import Calendar from './components/Calendar';
 import Travels from './components/Travels';
@@ -13,33 +13,31 @@ import Notes from './components/Notes';
 import Photos from './components/Photos';
 import Notifications from './components/Notifications';
 import Settings from './components/SettingsComponent';
-import UpdatePassword from './components/UpdatePassword'; // Importe o novo componente
+import UpdatePassword from './components/UpdatePassword';
 
 /**
- * Componente principal da aplicação com roteamento por seções
- * Gerencia a navegação entre diferentes funcionalidades do app
+ * Componente que gerencia a renderização principal da aplicação.
  */
 function AppContent() {
   const { state } = useApp();
   const [currentSection, setCurrentSection] = useState('dashboard');
   
-  // Rota para a página de atualização de senha
+  // Rota especial para a página de atualização de senha via link de e-mail.
   if (window.location.pathname === '/update-password') {
     return <UpdatePassword />;
   }
 
-  // Redireciona para login se não estiver autenticado
+  // Se o usuário não estiver autenticado, mostra a tela de Login.
   if (!state.auth.isAuthenticated) {
     return <Login />;
   }
 
-  // Redireciona para configuração de perfil se não há parceiro cadastrado
-  if (!state.auth.partner) {
-    return <ProfileSetup />;
-  }
+  // CORREÇÃO: Removemos a verificação do parceiro aqui.
+  // AGORA, qualquer usuário autenticado vai direto para o painel principal.
+  // A lógica de convite será tratada na tela de Configurações.
 
   /**
-   * Renderiza o componente apropriado baseado na seção atual
+   * Renderiza a seção apropriada do painel principal.
    */
   const renderSection = () => {
     switch (currentSection) {
@@ -64,6 +62,7 @@ function AppContent() {
     }
   };
 
+  // Se o usuário está autenticado, ele sempre verá o Layout principal.
   return (
     <Layout currentSection={currentSection} onSectionChange={setCurrentSection}>
       {renderSection()}
@@ -72,7 +71,7 @@ function AppContent() {
 }
 
 /**
- * Componente raiz da aplicação com providers e configurações globais
+ * Componente raiz da aplicação com todos os providers e configurações globais.
  */
 function App() {
   return (
@@ -96,17 +95,11 @@ function App() {
               primary: '#10b981',
               secondary: '#fff',
             },
-            style: {
-              border: '1px solid #10b981',
-            },
           },
           error: {
             iconTheme: {
               primary: '#ef4444',
               secondary: '#fff',
-            },
-            style: {
-              border: '1px solid #ef4444',
             },
           },
         }}

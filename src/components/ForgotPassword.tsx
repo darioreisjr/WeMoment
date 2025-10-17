@@ -20,9 +20,11 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
         }
 
         setIsLoading(true);
+        const toastId = toast.loading("Enviando link...");
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/forgot-password`, {
+            // CORREÇÃO: Usando caminho relativo para o proxy.
+            const response = await fetch('/api/auth/forgot-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -32,15 +34,16 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
 
             const data = await response.json();
 
-            if (response.ok) {
-                toast.success('Um email com o link para redefinição de senha foi enviado.');
-                setIsSent(true);
-            } else {
-                toast.error(data.message || 'Erro ao enviar o email. Tente novamente.');
+            if (!response.ok) {
+                throw new Error(data.message || 'Erro ao enviar o email. Tente novamente.');
             }
-        } catch (error) {
+            
+            toast.success('Um email com o link para redefinição de senha foi enviado.', { id: toastId });
+            setIsSent(true);
+
+        } catch (error: any) {
             console.error('Erro ao solicitar redefinição de senha:', error);
-            toast.error('Não foi possível conectar ao servidor. Tente novamente mais tarde.');
+            toast.error(error.message || 'Não foi possível conectar ao servidor.', { id: toastId });
         } finally {
             setIsLoading(false);
         }
@@ -58,7 +61,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
                     </h1>
                     <p className="text-gray-600">
                         {isSent
-                            ? 'Verifique seu e-mail para continuar.'
+                            ? 'Verifique sua caixa de entrada (e spam) para continuar.'
                             : 'Insira seu e-mail para receber o link de redefinição.'}
                     </p>
                 </div>
@@ -89,7 +92,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBackToLogin }) => {
                                      hover:from-rose-600 hover:to-pink-700 transform hover:scale-[1.02] transition-all duration-200 
                                      shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                         >
-                            {isLoading ? 'Enviando...' : 'Enviar Link'}
+                            {isLoading ? 'Enviando...' : 'Enviar Link de Recuperação'}
                         </button>
                     </form>
                 ) : (

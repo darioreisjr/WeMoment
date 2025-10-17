@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, UserPlus } from 'lucide-react';
+import { Shield, UserPlus, Send } from 'lucide-react';
 import { CoupleStatusIndicator } from './CoupleStatusIndicator';
 
 interface CoupleStatus {
@@ -11,33 +11,20 @@ interface CoupleStatus {
 interface CoupleManagementProps {
   coupleStatus: CoupleStatus;
   hasPartner: boolean;
-  isCoupleFull: boolean;
-  inviteCode: string | null;
   inviteCodeInput: string;
   setInviteCodeInput: (value: string) => void;
-  copiedCode: boolean;
   onGenerateInviteCode: () => void;
   onUseInviteCode: () => void;
-  onCopyInviteCode: () => void;
 }
 
 export const CoupleManagement: React.FC<CoupleManagementProps> = ({
   coupleStatus,
   hasPartner,
-  isCoupleFull,
-  inviteCode,
   inviteCodeInput,
   setInviteCodeInput,
-  copiedCode,
   onGenerateInviteCode,
-  onUseInviteCode,
-  onCopyInviteCode
+  onUseInviteCode
 }) => {
-  // Só renderiza se tiver parceiro E informações incompletas
-  if (!hasPartner || coupleStatus.isComplete) {
-    return null;
-  }
-
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
       <div className="flex items-center justify-between mb-6">
@@ -48,53 +35,41 @@ export const CoupleManagement: React.FC<CoupleManagementProps> = ({
       <div className="space-y-4">
         <CoupleStatusIndicator coupleStatus={coupleStatus} />
 
-        {!isCoupleFull && (
-          <div className="space-y-3">
-            <div className="flex space-x-2">
-              <button
-                onClick={onGenerateInviteCode}
-                className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                <UserPlus size={16} className="mr-2" />
-                Gerar Código de Convite
-              </button>
-            </div>
+        {/* CORREÇÃO: Mostra a seção de convites SE o usuário NÃO tiver um parceiro. */}
+        {!hasPartner && (
+          <div className="space-y-3 pt-4 border-t border-gray-200">
+             <p className="text-sm text-center text-gray-600">
+                Você ainda não está conectado(a) a um parceiro. <br/>
+                Gere um código para convidá-lo(a) ou insira um código que você recebeu.
+             </p>
             
+            {/* Botão para gerar código */}
+            <button
+              onClick={onGenerateInviteCode}
+              className="w-full flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              <UserPlus size={16} className="mr-2" />
+              Gerar Código de Convite
+            </button>
+            
+            {/* Campo para usar código */}
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={inviteCodeInput}
-                onChange={(e) => setInviteCodeInput(e.target.value)}
-                placeholder="Digite um código de convite"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                maxLength={6}
+                onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())}
+                placeholder="Inserir código recebido"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-center font-mono"
+                maxLength={8}
               />
               <button
                 onClick={onUseInviteCode}
                 className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                aria-label="Usar código"
               >
-                Usar
+                <Send size={16} />
               </button>
             </div>
-          </div>
-        )}
-
-        {inviteCode && !isCoupleFull && (
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm font-medium text-blue-900 mb-2">Seu Código de Convite:</p>
-            <div className="flex items-center justify-between">
-              <code className="text-lg font-bold text-blue-700">{inviteCode}</code>
-              <button
-                onClick={onCopyInviteCode}
-                className="flex items-center px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-              >
-                {copiedCode ? <Check size={16} /> : <Copy size={16} />}
-                <span className="ml-1 text-sm">{copiedCode ? 'Copiado!' : 'Copiar'}</span>
-              </button>
-            </div>
-            <p className="text-xs text-blue-600 mt-2">
-              Compartilhe este código com seu(sua) parceiro(a) para que possam se juntar ao perfil.
-            </p>
           </div>
         )}
       </div>
