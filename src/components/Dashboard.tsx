@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { Event, WishItem, Note, Photo } from '../types';
@@ -13,284 +13,74 @@ export default function Dashboard() {
   const [showQuickNoteModal, setShowQuickNoteModal] = useState(false);
   const [showQuickPhotoModal, setShowQuickPhotoModal] = useState(false);
 
-  const [quickEventForm, setQuickEventForm] = useState({
-    title: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    type: 'date' as Event['type'],
-  });
+  const [quickEventForm, setQuickEventForm] = useState({ title: '', description: '', date: new Date().toISOString().split('T')[0], type: 'date' as Event['type'], });
+  const [quickWishForm, setQuickWishForm] = useState({ title: '', category: 'activity' as WishItem['category'], priority: 'medium' as WishItem['priority'], });
+  const [quickNoteForm, setQuickNoteForm] = useState({ title: '', content: '', });
 
-  const [quickWishForm, setQuickWishForm] = useState({
-    title: '',
-    category: 'activity' as WishItem['category'],
-    priority: 'medium' as WishItem['priority'],
-  });
+  const [quickPhotoForm, setQuickPhotoForm] = useState({ title: '', description: '' });
+  const [quickPhotoFile, setQuickPhotoFile] = useState<File | null>(null);
+  const quickPhotoInputRef = useRef<HTMLInputElement>(null);
 
-  const [quickNoteForm, setQuickNoteForm] = useState({
-    title: '',
-    content: '',
-  });
-
-  const [quickPhotoForm, setQuickPhotoForm] = useState({
-    title: '',
-    description: '',
-  });
 
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   
-  // Eventos de hoje
-  const todayEvents = state.events
-    .filter(event => event.date.startsWith(todayStr))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const todayEvents = state.events.filter(event => event.date.startsWith(todayStr)).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const upcomingEvents = state.events.filter(event => new Date(event.date) > today).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 3);
+  const filteredEvents = state.events.filter(event => { const eventDate = new Date(event.date); return eventDate.getFullYear() === selectedYear && eventDate.getMonth() + 1 === selectedMonth; }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Próximos eventos (excluindo os de hoje)
-  const upcomingEvents = state.events
-    .filter(event => new Date(event.date) > today)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 3);
-
-  // Eventos filtrados por ano e mês
-  const filteredEvents = state.events.filter(event => {
-    const eventDate = new Date(event.date);
-    return eventDate.getFullYear() === selectedYear && 
-           eventDate.getMonth() + 1 === selectedMonth;
-  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  // ========== ESTATÍSTICAS DE VIAGENS ==========
-  const getTravelStatus = (travel: any) => {
-    const today = new Date();
-    const startDate = new Date(travel.startDate);
-    const endDate = new Date(travel.endDate);
-    
-    if (today < startDate) return 'upcoming';
-    if (today >= startDate && today <= endDate) return 'ongoing';
-    return 'completed';
-  };
-
+  const getTravelStatus = (travel: any) => { const today = new Date(); const startDate = new Date(travel.startDate); const endDate = new Date(travel.endDate); if (today < startDate) return 'upcoming'; if (today >= startDate && today <= endDate) return 'ongoing'; return 'completed'; };
   const upcomingTravels = state.travels.filter(travel => getTravelStatus(travel) === 'upcoming');
   const ongoingTravels = state.travels.filter(travel => getTravelStatus(travel) === 'ongoing');
   const completedTravels = state.travels.filter(travel => getTravelStatus(travel) === 'completed');
-
-  // Próxima viagem
-  const nextTravel = upcomingTravels
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
-
-  // Viagem atual (se houver)
+  const nextTravel = upcomingTravels.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
   const currentTravel = ongoingTravels[0];
-
-  // Gerar opções de anos (últimos 2 anos + próximos 3 anos)
   const currentYear = new Date().getFullYear();
-  const yearOptions = [];
-  for (let year = currentYear - 2; year <= currentYear + 3; year++) {
-    yearOptions.push(year);
-  }
-
-  const monthNames = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-  ];
-
-  const recentPhotos = state.photos
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 6);
-
-  const priorityWishes = state.wishItems
-    .filter(wish => !wish.completed && wish.priority === 'high')
-    .slice(0, 3);
-
-  const recentNotes = state.notes
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 3);
-
-  // Cálculo do tempo de relacionamento
-  const getRelationshipTime = () => {
-    if (!state.auth.relationshipStartDate) return null;
-    
-    const start = new Date(state.auth.relationshipStartDate);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const years = Math.floor(diffDays / 365);
-    const months = Math.floor((diffDays % 365) / 30);
-    const days = diffDays % 30;
-    
-    return { years, months, days, totalDays: diffDays };
-  };
-
+  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - 2 + i);
+  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const recentPhotos = state.photos.slice(0, 6);
+  const priorityWishes = state.wishItems.filter(wish => !wish.completed && wish.priority === 'high').slice(0, 3);
+  const recentNotes = state.notes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 3);
+  const getRelationshipTime = () => { if (!state.auth.relationshipStartDate) return null; const start = new Date(state.auth.relationshipStartDate); const now = new Date(); const diffTime = Math.abs(now.getTime() - start.getTime()); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); const years = Math.floor(diffDays / 365); const months = Math.floor((diffDays % 365) / 30); const days = diffDays % 30; return { years, months, days, totalDays: diffDays }; };
   const relationshipTime = getRelationshipTime();
 
-  // Quick Actions Handlers
-  const handleQuickEvent = async (e: React.FormEvent) => {
+  const handleQuickEvent = async (e: React.FormEvent) => { e.preventDefault(); if (!quickEventForm.title.trim()) { toast.error('Título é obrigatório!'); return; } if (!state.auth.token) { toast.error('Sessão expirada. Faça login novamente.'); return; } const eventPayload = { title: quickEventForm.title.trim(), description: quickEventForm.description.trim(), date: `${quickEventForm.date}T12:00:00.000Z`, type: quickEventForm.type, location: '', }; try { const response = await fetch(`${import.meta.env.VITE_API_URL}/api/events`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.auth.token}`, }, body: JSON.stringify(eventPayload), }); const newEvent = await response.json(); if (!response.ok) { throw new Error(newEvent.error || 'Falha ao criar o evento.'); } dispatch({ type: 'ADD_EVENT', payload: newEvent }); toast.success('Evento adicionado!'); setQuickEventForm({ title: '', description: '', date: new Date().toISOString().split('T')[0], type: 'date', }); setShowQuickEventModal(false); } catch (error) { console.error('Erro ao criar evento rápido:', error); toast.error((error as Error).message || 'Não foi possível criar o evento.'); } };
+  const handleQuickWish = async (e: React.FormEvent) => { e.preventDefault(); if (!quickWishForm.title.trim()) { toast.error('Título é obrigatório!'); return; } if (!state.auth.token) { toast.error("Sessão expirada. Faça login novamente."); return; } const wishPayload = { title: quickWishForm.title.trim(), description: '', category: quickWishForm.category, priority: quickWishForm.priority, completed: false, }; try { const response = await fetch(`${import.meta.env.VITE_API_URL}/api/wishes`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.auth.token}`, }, body: JSON.stringify(wishPayload), }); const newWish = await response.json(); if (!response.ok) { throw new Error(newWish.error || 'Falha ao adicionar o desejo.'); } dispatch({ type: 'ADD_WISH_ITEM', payload: newWish }); toast.success('Desejo adicionado!'); setQuickWishForm({ title: '', category: 'activity', priority: 'medium', }); setShowQuickWishModal(false); } catch (error) { toast.error((error as Error).message || 'Ocorreu um erro desconhecido.'); } };
+  const handleQuickNote = async (e: React.FormEvent) => { e.preventDefault(); if (!quickNoteForm.title.trim()) { toast.error('O título é obrigatório!'); return; } if (!state.auth.token) { toast.error("Sessão expirada. Faça login novamente."); return; } const notePayload = { title: quickNoteForm.title.trim(), content: quickNoteForm.content.trim(), }; try { const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notes`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.auth.token}`, }, body: JSON.stringify(notePayload), }); const newNote = await response.json(); if (!response.ok) { throw new Error(newNote.error || 'Falha ao criar a anotação.'); } dispatch({ type: 'ADD_NOTE', payload: newNote }); toast.success('Anotação criada!'); setQuickNoteForm({ title: '', content: '' }); setShowQuickNoteModal(false); } catch (error) { toast.error((error as Error).message || 'Não foi possível criar a anotação.'); } };
+
+  const handleQuickPhoto = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!quickEventForm.title.trim()) {
-      toast.error('Título é obrigatório!');
-      return;
-    }
-    if (!state.auth.token) {
-      toast.error('Sessão expirada. Faça login novamente.');
+    if (!quickPhotoFile || !quickPhotoForm.title.trim() || !state.auth.token) {
+      toast.error('Por favor, selecione uma foto e adicione um título.');
       return;
     }
 
-    const eventPayload = {
-      title: quickEventForm.title.trim(),
-      description: quickEventForm.description.trim(),
-      date: `${quickEventForm.date}T12:00:00.000Z`,
-      type: quickEventForm.type,
-      location: '', 
-    };
+    const formData = new FormData();
+    formData.append('photo', quickPhotoFile);
+    formData.append('title', quickPhotoForm.title);
+    formData.append('description', quickPhotoForm.description);
+
+    const loadingToast = toast.loading('Adicionando foto...');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/events`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/photos`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.auth.token}`,
-        },
-        body: JSON.stringify(eventPayload),
+        headers: { 'Authorization': `Bearer ${state.auth.token}` },
+        body: formData,
       });
 
-      const newEvent = await response.json();
+      const newPhoto = await response.json();
+      if (!response.ok) throw new Error(newPhoto.error || 'Falha ao adicionar foto.');
 
-      if (!response.ok) {
-        throw new Error(newEvent.error || 'Falha ao criar o evento.');
-      }
-
-      dispatch({ type: 'ADD_EVENT', payload: newEvent });
-      toast.success('Evento adicionado!');
-      setQuickEventForm({
-        title: '',
-        description: '',
-        date: new Date().toISOString().split('T')[0],
-        type: 'date',
-      });
-      setShowQuickEventModal(false);
-
+      dispatch({ type: 'ADD_PHOTO', payload: newPhoto });
+      toast.success('Foto adicionada!', { id: loadingToast });
+      
+      setQuickPhotoForm({ title: '', description: '' });
+      setQuickPhotoFile(null);
+      setShowQuickPhotoModal(false);
     } catch (error) {
-      console.error('Erro ao criar evento rápido:', error);
-      toast.error((error as Error).message || 'Não foi possível criar o evento.');
+      toast.error((error as Error).message, { id: loadingToast });
     }
-  };
-
-  const handleQuickWish = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickWishForm.title.trim()) {
-      toast.error('Título é obrigatório!');
-      return;
-    }
-
-    if (!state.auth.token) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        return;
-    }
-
-    const wishPayload = {
-      title: quickWishForm.title.trim(),
-      description: '', // Descrição vazia para ação rápida
-      category: quickWishForm.category,
-      priority: quickWishForm.priority,
-      completed: false,
-    };
-
-    try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/wishes`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${state.auth.token}`,
-            },
-            body: JSON.stringify(wishPayload),
-        });
-
-        const newWish = await response.json();
-
-        if (!response.ok) {
-            throw new Error(newWish.error || 'Falha ao adicionar o desejo.');
-        }
-
-        dispatch({ type: 'ADD_WISH_ITEM', payload: newWish });
-        toast.success('Desejo adicionado!');
-        setQuickWishForm({
-            title: '',
-            category: 'activity',
-            priority: 'medium',
-        });
-        setShowQuickWishModal(false);
-
-    } catch (error) {
-        toast.error((error as Error).message || 'Ocorreu um erro desconhecido.');
-    }
-  };
-
-  const handleQuickNote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickNoteForm.title.trim()) {
-        toast.error('O título é obrigatório!');
-        return;
-    }
-    if (!state.auth.token) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        return;
-    }
-
-    const notePayload = {
-        title: quickNoteForm.title.trim(),
-        content: quickNoteForm.content.trim(),
-    };
-
-    try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notes`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${state.auth.token}`,
-            },
-            body: JSON.stringify(notePayload),
-        });
-
-        const newNote = await response.json();
-
-        if (!response.ok) {
-            throw new Error(newNote.error || 'Falha ao criar a anotação.');
-        }
-
-        dispatch({ type: 'ADD_NOTE', payload: newNote });
-        toast.success('Anotação criada!');
-        setQuickNoteForm({ title: '', content: '' });
-        setShowQuickNoteModal(false);
-
-    } catch (error) {
-        toast.error((error as Error).message || 'Não foi possível criar a anotação.');
-    }
-  };
-
-  const handleQuickPhoto = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickPhotoForm.title.trim()) {
-      toast.error('Título é obrigatório!');
-      return;
-    }
-
-    // Simular upload de foto
-    const mockPhotoUrl = `https://images.pexels.com/photos/${Math.floor(Math.random() * 1000000)}/pexels-photo.jpeg?auto=compress&cs=tinysrgb&w=800`;
-
-    const newPhoto: Photo = {
-      id: Date.now().toString(),
-      url: mockPhotoUrl,
-      title: quickPhotoForm.title.trim(),
-      description: quickPhotoForm.description.trim(),
-      date: new Date().toISOString().split('T')[0],
-      uploadedBy: state.auth.user?.id || '',
-      createdAt: new Date().toISOString(),
-    };
-
-    dispatch({ type: 'ADD_PHOTO', payload: newPhoto });
-    toast.success('Foto adicionada!');
-    setQuickPhotoForm({
-      title: '',
-      description: '',
-    });
-    setShowQuickPhotoModal(false);
   };
 
   return (
@@ -904,67 +694,23 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full">
             <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Foto Rápida</h3>
-                <button
-                  onClick={() => setShowQuickPhotoModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
+              <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-semibold text-gray-900">Foto Rápida</h3><button onClick={() => setShowQuickPhotoModal(false)} className="text-gray-500 hover:text-gray-700"><X size={20} /></button></div>
               <form onSubmit={handleQuickPhoto} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Título
-                  </label>
-                  <input
-                    type="text"
-                    value={quickPhotoForm.title}
-                    onChange={(e) => setQuickPhotoForm(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    placeholder="Título da foto"
-                    required
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Arquivo da Foto</label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer" onClick={() => quickPhotoInputRef.current?.click()}>
+                    <div className="space-y-1 text-center">
+                      <Camera className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="flex text-sm text-gray-600"><p className="pl-1">{quickPhotoFile ? quickPhotoFile.name : 'Clique para selecionar'}</p></div>
+                    </div>
+                    <input ref={quickPhotoInputRef} type="file" className="sr-only" accept="image/*" onChange={(e) => setQuickPhotoFile(e.target.files?.[0] || null)} />
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descrição
-                  </label>
-                  <textarea
-                    value={quickPhotoForm.description}
-                    onChange={(e) => setQuickPhotoForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    rows={3}
-                    placeholder="Descreva o momento..."
-                  />
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-2">
-                    📷 Upload simulado (versão demo)
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Uma foto de exemplo será adicionada automaticamente para demonstração.
-                  </p>
-                </div>
-
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Título</label><input type="text" value={quickPhotoForm.title} onChange={(e) => setQuickPhotoForm(prev => ({ ...prev, title: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" placeholder="Título da foto" required /></div>
+                <div><label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label><textarea value={quickPhotoForm.description} onChange={(e) => setQuickPhotoForm(prev => ({ ...prev, description: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" rows={3} placeholder="Descreva o momento..."/></div>
                 <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowQuickPhotoModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-                  >
-                    Adicionar Foto
-                  </button>
+                  <button type="button" onClick={() => setShowQuickPhotoModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+                  <button type="submit" className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors">Adicionar Foto</button>
                 </div>
               </form>
             </div>
