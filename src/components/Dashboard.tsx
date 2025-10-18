@@ -100,7 +100,7 @@ export default function Dashboard() {
     .slice(0, 3);
 
   const recentNotes = state.notes
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
     .slice(0, 3);
 
   // Cálculo do tempo de relacionamento
@@ -222,29 +222,46 @@ export default function Dashboard() {
     }
   };
 
-  const handleQuickNote = (e: React.FormEvent) => {
+  const handleQuickNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickNoteForm.title.trim()) {
-      toast.error('Título é obrigatório!');
-      return;
+        toast.error('O título é obrigatório!');
+        return;
+    }
+    if (!state.auth.token) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        return;
     }
 
-    const newNote: Note = {
-      id: Date.now().toString(),
-      title: quickNoteForm.title.trim(),
-      content: quickNoteForm.content.trim(),
-      createdBy: state.auth.user?.id || '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const notePayload = {
+        title: quickNoteForm.title.trim(),
+        content: quickNoteForm.content.trim(),
     };
 
-    dispatch({ type: 'ADD_NOTE', payload: newNote });
-    toast.success('Anotação criada!');
-    setQuickNoteForm({
-      title: '',
-      content: '',
-    });
-    setShowQuickNoteModal(false);
+    try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.auth.token}`,
+            },
+            body: JSON.stringify(notePayload),
+        });
+
+        const newNote = await response.json();
+
+        if (!response.ok) {
+            throw new Error(newNote.error || 'Falha ao criar a anotação.');
+        }
+
+        dispatch({ type: 'ADD_NOTE', payload: newNote });
+        toast.success('Anotação criada!');
+        setQuickNoteForm({ title: '', content: '' });
+        setShowQuickNoteModal(false);
+
+    } catch (error) {
+        toast.error((error as Error).message || 'Não foi possível criar a anotação.');
+    }
   };
 
   const handleQuickPhoto = (e: React.FormEvent) => {
@@ -631,7 +648,7 @@ export default function Dashboard() {
                   <h4 className="font-medium text-gray-900 mb-1">{note.title}</h4>
                   <p className="text-sm text-gray-600 line-clamp-2">{note.content}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {new Date(note.updatedAt).toLocaleDateString('pt-BR')}
+                    {new Date(note.updated_at).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
               ))}
