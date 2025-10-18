@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { AppState, Action, Photo, Event, WishItem } from '../types';
+import { AppState, Action, Photo, Event, WishItem, Note } from '../types';
 
 // Função para gerar fotos mockup para demonstração
 const generateMockPhotos = (): Photo[] => {
@@ -225,6 +225,8 @@ function appReducer(state: AppState, action: Action): AppState {
       };
 
     // ========== NOTES ACTIONS ==========
+    case 'SET_NOTES':
+        return { ...state, notes: action.payload };
     case 'ADD_NOTE':
       return {
         ...state,
@@ -405,6 +407,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           console.error('Erro ao conectar com a API de desejos:', error);
+        }
+        
+        // Fetch Notes
+        try {
+            const notesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/notes`, {
+                headers: { 'Authorization': `Bearer ${state.auth.token}` },
+            });
+            if (notesResponse.ok) {
+                const notes: Note[] = await notesResponse.json();
+                dispatch({ type: 'SET_NOTES', payload: notes });
+                console.log('✅ Anotações carregadas da API:', notes);
+            } else {
+                console.error('Falha ao buscar anotações:', notesResponse.statusText);
+            }
+        } catch (error) {
+            console.error('Erro ao conectar com a API de anotações:', error);
         }
       }
     };

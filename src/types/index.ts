@@ -56,12 +56,13 @@ export interface WishItem {
 
 export interface Note {
   id: string;
+  user_id: string;
   title: string;
   content: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
+
 
 export interface Photo {
   id: string;
@@ -175,6 +176,7 @@ export type Action =
   | { type: 'ADD_WISH_ITEM'; payload: WishItem }
   | { type: 'UPDATE_WISH_ITEM'; payload: WishItem }
   | { type: 'DELETE_WISH_ITEM'; payload: string }
+  | { type: 'SET_NOTES'; payload: Note[] }
   | { type: 'ADD_NOTE'; payload: Note }
   | { type: 'UPDATE_NOTE'; payload: Note }
   | { type: 'DELETE_NOTE'; payload: string }

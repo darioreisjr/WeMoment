@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { Note } from '../types';
@@ -14,67 +14,107 @@ export default function Notes() {
     content: '',
   });
 
+  // Carrega as anotações da API ao montar o componente
+  useEffect(() => {
+    const fetchNotes = async () => {
+        if (!state.auth.token) return;
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notes`, {
+                headers: { 'Authorization': `Bearer ${state.auth.token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                dispatch({ type: 'SET_NOTES', payload: data });
+            } else {
+                toast.error('Falha ao carregar anotações.');
+            }
+        } catch (error) {
+            toast.error('Erro de conexão ao buscar anotações.');
+        }
+    };
+    fetchNotes();
+  }, [state.auth.token, dispatch]);
+
   const filteredNotes = state.notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchTerm.toLowerCase())
+    (note.content && note.content.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleNoteSubmit = (e: React.FormEvent) => {
+  const handleNoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!state.auth.user) return;
-
-    if (editingNote) {
-      const updatedNote: Note = {
-        ...editingNote,
-        title: noteForm.title,
-        content: noteForm.content,
-        updatedAt: new Date().toISOString(),
-      };
-      dispatch({ type: 'UPDATE_NOTE', payload: updatedNote });
-      
-      // Substituído por toast notification
-      toast.success(`Anotação "${noteForm.title}" atualizada! ✏️`, {
-        duration: 3000,
-      });
-    } else {
-      const newNote: Note = {
-        id: Date.now().toString(),
-        title: noteForm.title,
-        content: noteForm.content,
-        createdBy: state.auth.user.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      dispatch({ type: 'ADD_NOTE', payload: newNote });
-      
-      // Substituído por toast notification
-      toast.success(`Anotação "${noteForm.title}" criada! 📝`, {
-        duration: 3000,
-      });
+    if (!state.auth.token) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        return;
     }
 
-    setShowNoteModal(false);
-    setEditingNote(null);
-    setNoteForm({ title: '', content: '' });
+    const isEditing = !!editingNote;
+    const url = isEditing
+      ? `${import.meta.env.VITE_API_URL}/api/notes/${editingNote.id}`
+      : `${import.meta.env.VITE_API_URL}/api/notes`;
+    const method = isEditing ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.auth.token}`,
+            },
+            body: JSON.stringify(noteForm),
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(responseData.error || 'Falha ao salvar a anotação.');
+        }
+
+        if (isEditing) {
+            dispatch({ type: 'UPDATE_NOTE', payload: responseData });
+            toast.success(`Anotação "${responseData.title}" atualizada! ✏️`);
+        } else {
+            dispatch({ type: 'ADD_NOTE', payload: responseData });
+            toast.success(`Anotação "${responseData.title}" criada! 📝`);
+        }
+
+        setShowNoteModal(false);
+        setEditingNote(null);
+        setNoteForm({ title: '', content: '' });
+
+    } catch (error) {
+        toast.error((error as Error).message || 'Ocorreu um erro desconhecido.');
+    }
   };
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
     setNoteForm({
       title: note.title,
-      content: note.content,
+      content: note.content || '',
     });
     setShowNoteModal(true);
   };
 
-  const handleDeleteNote = (noteId: string) => {
+  const handleDeleteNote = async (noteId: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta anotação?')) {
-      dispatch({ type: 'DELETE_NOTE', payload: noteId });
-      
-      // Adicionando toast notification para exclusão
-      toast.success('Anotação excluída com sucesso! 🗑️', {
-        duration: 2000,
-      });
+        if (!state.auth.token) return;
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/notes/${noteId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${state.auth.token}` },
+            });
+
+            if (!response.ok) {
+                throw new Error('Falha ao excluir a anotação.');
+            }
+
+            dispatch({ type: 'DELETE_NOTE', payload: noteId });
+            toast.success('Anotação excluída com sucesso! 🗑️');
+
+        } catch (error) {
+            toast.error((error as Error).message);
+        }
     }
   };
 
@@ -147,16 +187,16 @@ export default function Notes() {
               </div>
               
               <div className="text-gray-600 text-sm mb-4 line-clamp-4">
-                {note.content.split('\n').map((line, index) => (
+                {note.content && note.content.split('\n').map((line, index) => (
                   <p key={index} className="mb-1">{line}</p>
                 ))}
               </div>
               
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>
-                  Criado por {state.auth.user?.id === note.createdBy ? 'você' : state.auth.partner?.firstName}
+                  Criado por {state.auth.user?.id === note.user_id ? 'você' : state.auth.partner?.firstName}
                 </span>
-                <span>{new Date(note.updatedAt).toLocaleDateString('pt-BR')}</span>
+                <span>{new Date(note.updated_at).toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
           ))
