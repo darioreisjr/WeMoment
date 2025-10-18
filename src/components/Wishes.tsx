@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import { WishItem } from '../types';
-import { Heart, Plus, X, Check, Star, MapPin } from 'lucide-react';
+import { Heart, Plus, X, Check, Star, Trash2, Edit3 } from 'lucide-react';
 
 export default function Wishes() {
   const { state, dispatch } = useApp();
   const [showWishModal, setShowWishModal] = useState(false);
+  const [editingWish, setEditingWish] = useState<WishItem | null>(null);
   const [wishForm, setWishForm] = useState({
     title: '',
     description: '',
@@ -14,111 +15,166 @@ export default function Wishes() {
     priority: 'medium' as WishItem['priority'],
   });
 
-  const handleWishSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!state.auth.user) return;
-
-    const newWish: WishItem = {
-      id: Date.now().toString(),
-      title: wishForm.title,
-      description: wishForm.description,
-      category: wishForm.category,
-      priority: wishForm.priority,
-      completed: false,
-      createdBy: state.auth.user.id,
-      createdAt: new Date().toISOString(),
-    };
-
-    dispatch({ type: 'ADD_WISH_ITEM', payload: newWish });
-    
-    // Substituído por toast notification
-    toast.success(`Desejo "${wishForm.title}" adicionado! 💕`, {
-      duration: 3000,
-    });
-    
-    // Add notification
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: {
-        id: Date.now().toString(),
-        title: 'Novo desejo adicionado!',
-        message: `"${wishForm.title}" foi adicionado à lista de desejos`,
-        type: 'achievement',
-        date: new Date().toISOString(),
-        read: false,
-        createdAt: new Date().toISOString(),
-      },
-    });
-
-    setShowWishModal(false);
+  const openNewWishModal = () => {
+    setEditingWish(null);
     setWishForm({
       title: '',
       description: '',
       category: 'activity',
       priority: 'medium',
     });
+    setShowWishModal(true);
+  };
+  
+  const openEditWishModal = (wish: WishItem) => {
+    setEditingWish(wish);
+    setWishForm({
+      title: wish.title,
+      description: wish.description,
+      category: wish.category,
+      priority: wish.priority,
+    });
+    setShowWishModal(true);
   };
 
-  const toggleWishCompleted = (wishId: string) => {
-    const wish = state.wishItems.find(w => w.id === wishId);
-    if (wish) {
-      const updatedWish = { ...wish, completed: !wish.completed };
-      dispatch({ type: 'UPDATE_WISH_ITEM', payload: updatedWish });
+  const handleWishSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!state.auth.token) {
+      toast.error("Sessão expirada. Faça login novamente.");
+      return;
+    }
+
+    const isEditing = !!editingWish;
+    const url = isEditing
+      ? `${import.meta.env.VITE_API_URL}/api/wishes/${editingWish.id}`
+      : `${import.meta.env.VITE_API_URL}/api/wishes`;
+    const method = isEditing ? 'PUT' : 'POST';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.auth.token}`,
+        },
+        body: JSON.stringify({
+          ...wishForm,
+          completed: editingWish ? editingWish.completed : false,
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Falha ao salvar o desejo.');
+      }
       
-      if (updatedWish.completed) {
-        // Substituído por toast notification
-        toast.success(`Parabéns! Desejo "${wish.title}" realizado! 🎉`, {
-          duration: 4000,
-          icon: '🎉',
-        });
+      if (isEditing) {
+        dispatch({ type: 'UPDATE_WISH_ITEM', payload: responseData });
+        toast.success(`Desejo "${responseData.title}" atualizado! ✏️`);
+      } else {
+        dispatch({ type: 'ADD_WISH_ITEM', payload: responseData });
+        toast.success(`Desejo "${responseData.title}" adicionado! 💕`);
         
         dispatch({
           type: 'ADD_NOTIFICATION',
           payload: {
             id: Date.now().toString(),
-            title: 'Desejo realizado! 🎉',
-            message: `Parabéns! Vocês realizaram: "${wish.title}"`,
+            title: 'Novo desejo adicionado!',
+            message: `"${responseData.title}" foi adicionado à lista de desejos`,
             type: 'achievement',
             date: new Date().toISOString(),
             read: false,
             createdAt: new Date().toISOString(),
           },
         });
-      } else {
-        // Quando desmarcar um desejo como realizado
-        toast('Desejo desmarcado como pendente', {
-          duration: 2000,
-          icon: '↩️',
-        });
       }
+
+      setShowWishModal(false);
+      setEditingWish(null);
+      setWishForm({
+        title: '',
+        description: '',
+        category: 'activity',
+        priority: 'medium',
+      });
+
+    } catch (error) {
+      toast.error((error as Error).message || 'Ocorreu um erro desconhecido.');
     }
   };
 
+  const toggleWishCompleted = async (wish: WishItem) => {
+    if (!state.auth.token) return;
+
+    const updatedWishData = { ...wish, completed: !wish.completed };
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/wishes/${wish.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.auth.token}`,
+        },
+        body: JSON.stringify(updatedWishData),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Falha ao atualizar o status do desejo.');
+      }
+
+      dispatch({ type: 'UPDATE_WISH_ITEM', payload: responseData });
+      
+      if (responseData.completed) {
+        toast.success(`Parabéns! Desejo "${wish.title}" realizado! 🎉`);
+      } else {
+        toast('Desejo desmarcado como pendente.', { icon: '↩️' });
+      }
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  const handleDeleteWish = async (wishId: string) => {
+    if (window.confirm('Tem certeza de que deseja excluir este desejo?')) {
+      if (!state.auth.token) return;
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/wishes/${wishId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${state.auth.token}` },
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao excluir o desejo.');
+        }
+
+        dispatch({ type: 'DELETE_WISH_ITEM', payload: wishId });
+        toast.success('Desejo excluído com sucesso! 🗑️');
+      } catch (error) {
+        toast.error((error as Error).message);
+      }
+    }
+  };
+  
   const getCategoryIcon = (category: WishItem['category']) => {
     switch (category) {
-      case 'travel':
-        return '✈️';
-      case 'restaurant':
-        return '🍽️';
-      case 'activity':
-        return '🎯';
-      case 'dream':
-        return '💭';
-      default:
-        return '📝';
+      case 'travel': return '✈️';
+      case 'restaurant': return '🍽️';
+      case 'activity': return '🎯';
+      case 'dream': return '💭';
+      default: return '📝';
     }
   };
 
   const getPriorityColor = (priority: WishItem['priority']) => {
     switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -140,7 +196,7 @@ export default function Wishes() {
           Lista de Desejos
         </h1>
         <button
-          onClick={() => setShowWishModal(true)}
+          onClick={openNewWishModal}
           className="flex items-center px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all"
         >
           <Plus className="mr-2" size={20} />
@@ -159,7 +215,6 @@ export default function Wishes() {
             <Heart className="text-rose-500" size={32} />
           </div>
         </div>
-        
         <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
           <div className="flex items-center justify-between">
             <div>
@@ -169,7 +224,6 @@ export default function Wishes() {
             <Check className="text-green-500" size={32} />
           </div>
         </div>
-        
         <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-white/20">
           <div className="flex items-center justify-between">
             <div>
@@ -197,12 +251,11 @@ export default function Wishes() {
                     <span className="text-xl">{getCategoryIcon(wish.category)}</span>
                     <h3 className="font-semibold text-gray-900">{wish.title}</h3>
                   </div>
-                  <button
-                    onClick={() => toggleWishCompleted(wish.id)}
-                    className="p-1 rounded-full hover:bg-green-100 transition-colors"
-                  >
-                    <Check className="text-green-600" size={20} />
-                  </button>
+                  <div className="flex items-center space-x-1">
+                    <button onClick={() => toggleWishCompleted(wish)} className="p-1 rounded-full hover:bg-green-100 transition-colors"><Check className="text-green-600" size={20} /></button>
+                    <button onClick={() => openEditWishModal(wish)} className="p-1 rounded-full hover:bg-blue-100 transition-colors"><Edit3 className="text-blue-600" size={16} /></button>
+                    <button onClick={() => handleDeleteWish(wish.id)} className="p-1 rounded-full hover:bg-red-100 transition-colors"><Trash2 className="text-red-600" size={16} /></button>
+                  </div>
                 </div>
                 <p className="text-gray-600 text-sm mb-3">{wish.description}</p>
                 <div className="flex items-center justify-between">
@@ -210,7 +263,7 @@ export default function Wishes() {
                     {wish.priority === 'high' ? 'Alta' : wish.priority === 'medium' ? 'Média' : 'Baixa'}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {new Date(wish.createdAt).toLocaleDateString('pt-BR')}
+                    {new Date(wish.created_at).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
               </div>
@@ -229,24 +282,14 @@ export default function Wishes() {
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-2">
                     <span className="text-xl">{getCategoryIcon(wish.category)}</span>
-                    <h3 className="font-semibold text-gray-900">{wish.title}</h3>
+                    <h3 className="font-semibold text-gray-900 line-through">{wish.title}</h3>
                   </div>
-                  <button
-                    onClick={() => toggleWishCompleted(wish.id)}
-                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                    title="Desmarcar como realizado"
-                  >
-                    <Check className="text-green-600" size={20} />
-                  </button>
+                  <button onClick={() => toggleWishCompleted(wish)} className="p-1 rounded-full hover:bg-gray-100 transition-colors" title="Desmarcar como realizado"><Check className="text-green-600" size={20} /></button>
                 </div>
                 <p className="text-gray-600 text-sm mb-3">{wish.description}</p>
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Realizado
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(wish.createdAt).toLocaleDateString('pt-BR')}
-                  </span>
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Realizado</span>
+                  <span className="text-xs text-gray-500">{new Date(wish.created_at).toLocaleDateString('pt-BR')}</span>
                 </div>
               </div>
             ))}
@@ -259,20 +302,12 @@ export default function Wishes() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Novo Desejo</h3>
-              <button
-                onClick={() => setShowWishModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <h3 className="text-lg font-bold text-gray-900">{editingWish ? 'Editar Desejo' : 'Novo Desejo'}</h3>
+              <button onClick={() => setShowWishModal(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors"><X size={20} /></button>
             </div>
-
             <form onSubmit={handleWishSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Título
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
                 <input
                   type="text"
                   value={wishForm.title}
@@ -282,11 +317,8 @@ export default function Wishes() {
                   required
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descrição
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                 <textarea
                   value={wishForm.description}
                   onChange={(e) => setWishForm({ ...wishForm, description: e.target.value })}
@@ -295,28 +327,18 @@ export default function Wishes() {
                   placeholder="Conte mais sobre este desejo..."
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Categoria
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
                 <select
                   value={wishForm.category}
                   onChange={(e) => setWishForm({ ...wishForm, category: e.target.value as WishItem['category'] })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                 >
-                  {categories.map(cat => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.icon} {cat.label}
-                    </option>
-                  ))}
+                  {categories.map(cat => (<option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>))}
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prioridade
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Prioridade</label>
                 <select
                   value={wishForm.priority}
                   onChange={(e) => setWishForm({ ...wishForm, priority: e.target.value as WishItem['priority'] })}
@@ -327,21 +349,9 @@ export default function Wishes() {
                   <option value="high">Alta</option>
                 </select>
               </div>
-
               <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowWishModal(false)}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all"
-                >
-                  Adicionar Desejo
-                </button>
+                <button type="button" onClick={() => setShowWishModal(false)} className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancelar</button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-lg hover:from-rose-600 hover:to-pink-600 transition-all">{editingWish ? 'Salvar Alterações' : 'Adicionar Desejo'}</button>
               </div>
             </form>
           </div>

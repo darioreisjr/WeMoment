@@ -44,13 +44,14 @@ export interface Event {
 
 export interface WishItem {
   id: string;
+  user_id: string; // Alinhado com a API
   title: string;
   description: string;
   category: 'travel' | 'restaurant' | 'activity' | 'dream' | 'other';
   priority: 'low' | 'medium' | 'high';
   completed: boolean;
-  createdBy: string;
-  createdAt: string;
+  created_at: string; // Alinhado com a API
+  updated_at: string; // Alinhado com a API
 }
 
 export interface Note {
@@ -166,10 +167,11 @@ export type Action =
   | { type: 'GENERATE_INVITE_CODE'; payload: InviteCode }
   | { type: 'USE_INVITE_CODE'; payload: { code: string; user: User } }
   | { type: 'INVALIDATE_INVITE_CODE'; payload: string }
-  | { type: 'SET_EVENTS'; payload: Event[] } // Nova action para carregar eventos
+  | { type: 'SET_EVENTS'; payload: Event[] } 
   | { type: 'ADD_EVENT'; payload: Event }
   | { type: 'UPDATE_EVENT'; payload: Event }
   | { type: 'DELETE_EVENT'; payload: string }
+  | { type: 'SET_WISHES'; payload: WishItem[] } // Nova action para carregar desejos
   | { type: 'ADD_WISH_ITEM'; payload: WishItem }
   | { type: 'UPDATE_WISH_ITEM'; payload: WishItem }
   | { type: 'DELETE_WISH_ITEM'; payload: string }

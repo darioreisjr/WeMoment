@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { AppState, Action, Photo, Event } from '../types';
+import { AppState, Action, Photo, Event, WishItem } from '../types';
 
 // Função para gerar fotos mockup para demonstração
 const generateMockPhotos = (): Photo[] => {
@@ -198,6 +198,12 @@ function appReducer(state: AppState, action: Action): AppState {
       };
 
     // ========== WISH ITEMS ACTIONS ==========
+    case 'SET_WISHES': // NOVA ACTION
+      return {
+        ...state,
+        wishItems: action.payload,
+      };
+
     case 'ADD_WISH_ITEM':
       return {
         ...state,
@@ -278,10 +284,6 @@ function appReducer(state: AppState, action: Action): AppState {
       };
 
     // ========== TRAVELS ACTIONS (NOVAS) ==========
-    /**
-     * Adiciona uma nova viagem ao estado global
-     * Inclui validação básica e logging para debugging
-     */
     case 'ADD_TRAVEL':
       console.log('🧳 Nova viagem adicionada:', action.payload);
       return {
@@ -289,10 +291,6 @@ function appReducer(state: AppState, action: Action): AppState {
         travels: [...state.travels, action.payload],
       };
 
-    /**
-     * Atualiza uma viagem existente no estado global
-     * Encontra a viagem pelo ID e substitui pelos novos dados
-     */
     case 'UPDATE_TRAVEL':
       console.log('✏️ Viagem atualizada:', action.payload);
       return {
@@ -302,10 +300,6 @@ function appReducer(state: AppState, action: Action): AppState {
         ),
       };
 
-    /**
-     * Remove uma viagem do estado global
-     * Remove também eventos do calendário relacionados à viagem
-     */
     case 'DELETE_TRAVEL':
       console.log('🗑️ Viagem removida:', action.payload);
       return {
@@ -325,7 +319,6 @@ function appReducer(state: AppState, action: Action): AppState {
           relationshipStartDate: action.payload.auth.relationshipStartDate || undefined,
           isCoupleFull: !!(action.payload.auth.user && action.payload.auth.partner),
         },
-        // Garante que travels existe no estado carregado (compatibilidade com versões antigas)
         travels: action.payload.travels || [],
       };
 
@@ -357,7 +350,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const parsedData = JSON.parse(savedData);
         console.log('📖 Dados carregados do localStorage:', parsedData);
         
-        // Garante compatibilidade com versões antigas que não tinham travels
         if (!parsedData.travels) {
           parsedData.travels = [];
         }
@@ -370,7 +362,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log('📋 Nenhum dado encontrado no localStorage');
     }
     
-    // Carrega dados mockup se não há fotos
     const existingData = savedData ? JSON.parse(savedData) : null;
     if (!existingData || !existingData.photos || existingData.photos.length === 0) {
       console.log('🎭 Carregando dados mockup para demonstração...');
@@ -378,31 +369,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
   
-  // Novo Effect para buscar eventos da API quando autenticado
+  // Effect para buscar dados da API quando autenticado
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchData = async () => {
       if (state.auth.isAuthenticated && state.auth.token) {
-        console.log('🚀 Buscando eventos da API...');
+        console.log('🚀 Buscando dados da API...');
+        
+        // Fetch Events
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/events`, {
-            headers: {
-              'Authorization': `Bearer ${state.auth.token}`,
-            },
+          const eventsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/events`, {
+            headers: { 'Authorization': `Bearer ${state.auth.token}` },
           });
-          if (response.ok) {
-            const events: Event[] = await response.json();
+          if (eventsResponse.ok) {
+            const events: Event[] = await eventsResponse.json();
             dispatch({ type: 'SET_EVENTS', payload: events });
             console.log('✅ Eventos carregados da API:', events);
           } else {
-            console.error('Falha ao buscar eventos:', response.statusText);
+            console.error('Falha ao buscar eventos:', eventsResponse.statusText);
           }
         } catch (error) {
           console.error('Erro ao conectar com a API de eventos:', error);
         }
+
+        // Fetch Wishes (NOVA IMPLEMENTAÇÃO)
+        try {
+          const wishesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/wishes`, {
+            headers: { 'Authorization': `Bearer ${state.auth.token}` },
+          });
+          if (wishesResponse.ok) {
+            const wishes: WishItem[] = await wishesResponse.json();
+            dispatch({ type: 'SET_WISHES', payload: wishes });
+            console.log('✅ Desejos carregados da API:', wishes);
+          } else {
+            console.error('Falha ao buscar desejos:', wishesResponse.statusText);
+          }
+        } catch (error) {
+          console.error('Erro ao conectar com a API de desejos:', error);
+        }
       }
     };
 
-    fetchEvents();
+    fetchData();
   }, [state.auth.isAuthenticated, state.auth.token]);
 
 
@@ -426,7 +433,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
 /**
  * Hook customizado para acessar o contexto da aplicação
- * Inclui validação para garantir que seja usado dentro do Provider
  */
 export function useApp() {
   const context = useContext(AppContext);
