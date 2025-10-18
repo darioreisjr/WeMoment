@@ -1,40 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { AppState, Action, Photo, Event, WishItem, Note } from '../types';
 
-// Função para gerar fotos mockup para demonstração
-const generateMockPhotos = (): Photo[] => {
-  const mockPhotos = [
-    {
-      id: 'mock1',
-      url: 'https://images.pexels.com/photos/1024976/pexels-photo-1024976.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Nosso Primeiro Encontro',
-      description: 'Que dia especial! Lembro de cada detalhe deste momento mágico.',
-      date: '2025-07-15',
-      uploadedBy: 'user1',
-      createdAt: '2025-07-15T18:30:00Z',
-    },
-    {
-      id: 'mock2',
-      url: 'https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Jantar Romântico',
-      description: 'Noite perfeita no nosso restaurante favorito. A comida estava deliciosa!',
-      date: '2025-07-08',
-      uploadedBy: 'partner1',
-      createdAt: '2025-07-08T20:15:00Z',
-    },
-    {
-      id: 'mock3',
-      url: 'https://images.pexels.com/photos/1024995/pexels-photo-1024995.jpeg?auto=compress&cs=tinysrgb&w=800',
-      title: 'Caminhada no Parque',
-      description: 'Que manhã linda explorando a natureza juntos. Os pássaros cantavam!',
-      date: '2025-06-20',
-      uploadedBy: 'user1',
-      createdAt: '2025-06-20T08:45:00Z',
-    }
-  ];
-  return mockPhotos;
-};
-
 // Estado inicial da aplicação incluindo viagens
 const initialState: AppState = {
   auth: {
@@ -248,10 +214,15 @@ function appReducer(state: AppState, action: Action): AppState {
       };
 
     // ========== PHOTOS ACTIONS ==========
+    case 'SET_PHOTOS':
+      return {
+        ...state,
+        photos: action.payload,
+      };
     case 'ADD_PHOTO':
       return {
         ...state,
-        photos: [...state.photos, action.payload],
+        photos: [action.payload, ...state.photos],
       };
 
     case 'UPDATE_PHOTO':
@@ -324,12 +295,6 @@ function appReducer(state: AppState, action: Action): AppState {
         travels: action.payload.travels || [],
       };
 
-    case 'LOAD_MOCK_DATA':
-      return {
-        ...state,
-        photos: generateMockPhotos(),
-      };
-
     default:
       console.log('⚠️ Action não reconhecida:', action.type);
       return state;
@@ -363,12 +328,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } else {
       console.log('📋 Nenhum dado encontrado no localStorage');
     }
-    
-    const existingData = savedData ? JSON.parse(savedData) : null;
-    if (!existingData || !existingData.photos || existingData.photos.length === 0) {
-      console.log('🎭 Carregando dados mockup para demonstração...');
-      dispatch({ type: 'LOAD_MOCK_DATA' });
-    }
   }, []);
   
   // Effect para buscar dados da API quando autenticado
@@ -376,53 +335,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const fetchData = async () => {
       if (state.auth.isAuthenticated && state.auth.token) {
         console.log('🚀 Buscando dados da API...');
-        
-        // Fetch Events
-        try {
-          const eventsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/events`, {
-            headers: { 'Authorization': `Bearer ${state.auth.token}` },
-          });
-          if (eventsResponse.ok) {
-            const events: Event[] = await eventsResponse.json();
-            dispatch({ type: 'SET_EVENTS', payload: events });
-            console.log('✅ Eventos carregados da API:', events);
-          } else {
-            console.error('Falha ao buscar eventos:', eventsResponse.statusText);
-          }
-        } catch (error) {
-          console.error('Erro ao conectar com a API de eventos:', error);
-        }
+        const headers = { 'Authorization': `Bearer ${state.auth.token}` };
 
-        // Fetch Wishes (NOVA IMPLEMENTAÇÃO)
-        try {
-          const wishesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/wishes`, {
-            headers: { 'Authorization': `Bearer ${state.auth.token}` },
-          });
-          if (wishesResponse.ok) {
-            const wishes: WishItem[] = await wishesResponse.json();
-            dispatch({ type: 'SET_WISHES', payload: wishes });
-            console.log('✅ Desejos carregados da API:', wishes);
-          } else {
-            console.error('Falha ao buscar desejos:', wishesResponse.statusText);
-          }
-        } catch (error) {
-          console.error('Erro ao conectar com a API de desejos:', error);
-        }
-        
-        // Fetch Notes
-        try {
-            const notesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/notes`, {
-                headers: { 'Authorization': `Bearer ${state.auth.token}` },
-            });
-            if (notesResponse.ok) {
-                const notes: Note[] = await notesResponse.json();
-                dispatch({ type: 'SET_NOTES', payload: notes });
-                console.log('✅ Anotações carregadas da API:', notes);
+        // Fetch Events, Wishes, Notes, Photos
+        const endpoints = {
+          events: 'SET_EVENTS',
+          wishes: 'SET_WISHES',
+          notes: 'SET_NOTES',
+          photos: 'SET_PHOTOS'
+        };
+
+        for (const [endpoint, actionType] of Object.entries(endpoints)) {
+          try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/${endpoint}`, { headers });
+            if (response.ok) {
+              const data = await response.json();
+              dispatch({ type: actionType as any, payload: data });
+              console.log(`✅ ${endpoint} carregados da API:`, data);
             } else {
-                console.error('Falha ao buscar anotações:', notesResponse.statusText);
+              console.error(`Falha ao buscar ${endpoint}:`, response.statusText);
             }
-        } catch (error) {
-            console.error('Erro ao conectar com a API de anotações:', error);
+          } catch (error) {
+            console.error(`Erro ao conectar com a API de ${endpoint}:`, error);
+          }
         }
       }
     };

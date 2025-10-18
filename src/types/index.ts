@@ -66,12 +66,11 @@ export interface Note {
 
 export interface Photo {
   id: string;
+  user_id: string;
   url: string;
   title: string;
   description: string;
-  date: string;
-  uploadedBy: string;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface Notification {
@@ -172,7 +171,7 @@ export type Action =
   | { type: 'ADD_EVENT'; payload: Event }
   | { type: 'UPDATE_EVENT'; payload: Event }
   | { type: 'DELETE_EVENT'; payload: string }
-  | { type: 'SET_WISHES'; payload: WishItem[] } // Nova action para carregar desejos
+  | { type: 'SET_WISHES'; payload: WishItem[] }
   | { type: 'ADD_WISH_ITEM'; payload: WishItem }
   | { type: 'UPDATE_WISH_ITEM'; payload: WishItem }
   | { type: 'DELETE_WISH_ITEM'; payload: string }
@@ -180,6 +179,7 @@ export type Action =
   | { type: 'ADD_NOTE'; payload: Note }
   | { type: 'UPDATE_NOTE'; payload: Note }
   | { type: 'DELETE_NOTE'; payload: string }
+  | { type: 'SET_PHOTOS'; payload: Photo[] }
   | { type: 'ADD_PHOTO'; payload: Photo }
   | { type: 'UPDATE_PHOTO'; payload: Photo }
   | { type: 'DELETE_PHOTO'; payload: string }
@@ -188,6 +188,6 @@ export type Action =
   | { type: 'LOAD_DATA'; payload: AppState }
   | { type: 'LOAD_MOCK_DATA' }
   // Novas actions para viagens
-  | { type: 'ADD_TRAVEL'; payload: Travel }           // Adicionar nova viagem
-  | { type: 'UPDATE_TRAVEL'; payload: Travel }        // Atualizar viagem existente
-  | { type: 'DELETE_TRAVEL'; payload: string };       // Remover viagem (por ID)
+  | { type: 'ADD_TRAVEL'; payload: Travel }
+  | { type: 'UPDATE_TRAVEL'; payload: Travel }
+  | { type: 'DELETE_TRAVEL'; payload: string };
