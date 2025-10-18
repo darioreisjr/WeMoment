@@ -135,9 +135,9 @@ export default function Dashboard() {
     const eventPayload = {
       title: quickEventForm.title.trim(),
       description: quickEventForm.description.trim(),
-      date: quickEventForm.date,
+      date: `${quickEventForm.date}T12:00:00.000Z`,
       type: quickEventForm.type,
-      location: '', // Adicionado para completar a interface
+      location: '', 
     };
 
     try {
@@ -172,32 +172,54 @@ export default function Dashboard() {
     }
   };
 
-  const handleQuickWish = (e: React.FormEvent) => {
+  const handleQuickWish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickWishForm.title.trim()) {
       toast.error('Título é obrigatório!');
       return;
     }
 
-    const newWish: WishItem = {
-      id: Date.now().toString(),
+    if (!state.auth.token) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        return;
+    }
+
+    const wishPayload = {
       title: quickWishForm.title.trim(),
-      description: '',
+      description: '', // Descrição vazia para ação rápida
       category: quickWishForm.category,
       priority: quickWishForm.priority,
       completed: false,
-      createdBy: state.auth.user?.id || '',
-      createdAt: new Date().toISOString(),
     };
 
-    dispatch({ type: 'ADD_WISH_ITEM', payload: newWish });
-    toast.success('Desejo adicionado!');
-    setQuickWishForm({
-      title: '',
-      category: 'activity',
-      priority: 'medium',
-    });
-    setShowQuickWishModal(false);
+    try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/wishes`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${state.auth.token}`,
+            },
+            body: JSON.stringify(wishPayload),
+        });
+
+        const newWish = await response.json();
+
+        if (!response.ok) {
+            throw new Error(newWish.error || 'Falha ao adicionar o desejo.');
+        }
+
+        dispatch({ type: 'ADD_WISH_ITEM', payload: newWish });
+        toast.success('Desejo adicionado!');
+        setQuickWishForm({
+            title: '',
+            category: 'activity',
+            priority: 'medium',
+        });
+        setShowQuickWishModal(false);
+
+    } catch (error) {
+        toast.error((error as Error).message || 'Ocorreu um erro desconhecido.');
+    }
   };
 
   const handleQuickNote = (e: React.FormEvent) => {
@@ -618,7 +640,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Modais das ações rápidas permanecem os mesmos... */}
       {/* Quick Event Modal */}
       {showQuickEventModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
