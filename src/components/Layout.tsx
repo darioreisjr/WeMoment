@@ -14,7 +14,9 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Plane, // Novo ícone para viagens
+  Plane,
+  Trophy,
+  Check,
 } from 'lucide-react';
 import logo from './../assents/Logo.png';
 
@@ -28,19 +30,18 @@ export default function Layout({ children, currentSection, onSectionChange }: La
   const { state, dispatch } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const unreadNotifications = state.notifications.filter(n => !n.read).length;
 
-  // Menu items atualizado incluindo a nova seção de viagens
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'calendar', label: 'Calendário', icon: Calendar },
-    { id: 'travels', label: 'Viagens', icon: Plane }, // Nova seção de viagens
+    { id: 'travels', label: 'Viagens', icon: Plane },
     { id: 'wishes', label: 'Lista de Desejos', icon: Heart },
     { id: 'notes', label: 'Anotações', icon: FileText },
     { id: 'photos', label: 'Galeria', icon: Camera },
-    { id: 'notifications', label: 'Notificações', icon: Bell },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
@@ -48,6 +49,27 @@ export default function Layout({ children, currentSection, onSectionChange }: La
     dispatch({ type: 'LOGOUT' });
     localStorage.removeItem('couples-app-data');
   };
+
+  const markAsRead = (notificationId: string) => {
+    dispatch({ type: 'MARK_NOTIFICATION_READ', payload: notificationId });
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'event':
+        return <Calendar className="text-blue-500" size={20} />;
+      case 'achievement':
+        return <Trophy className="text-yellow-500" size={20} />;
+      case 'reminder':
+        return <Bell className="text-purple-500" size={20} />;
+      default:
+        return <Heart className="text-rose-500" size={20} />;
+    }
+  };
+
+  const sortedNotifications = [...state.notifications].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
@@ -78,51 +100,125 @@ export default function Layout({ children, currentSection, onSectionChange }: La
             </div>
           </div>
 
-          {/* User Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center space-x-2 p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-            >
-              {state.auth.user?.avatar ? (
-                <img
-                  src={state.auth.user.avatar}
-                  alt={state.auth.user.firstName || state.auth.user.name || 'Usuário'}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  {(state.auth.user?.firstName || state.auth.user?.name || 'U').charAt(0).toUpperCase()}
+          {/* User Menu & Notifications */}
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              >
+                <Bell size={24} />
+                {unreadNotifications > 0 && (
+                  <span className="absolute top-1 right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 justify-center items-center text-white text-[10px]">
+                      {unreadNotifications}
+                    </span>
+                  </span>
+                )}
+              </button>
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="p-4 border-b">
+                    <h3 className="font-semibold">Notificações</h3>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {sortedNotifications.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Bell className="mx-auto text-gray-300 mb-4" size={48} />
+                        <p className="text-gray-500 text-sm">Nenhuma notificação ainda.</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y">
+                        {sortedNotifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`p-3 transition-all ${
+                              !notification.read ? 'bg-rose-50' : 'bg-white'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0 mt-1">
+                                  {getNotificationIcon(notification.type)}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-sm text-gray-900">
+                                    {notification.title}
+                                  </h4>
+                                  <p className="text-gray-600 text-sm mt-1">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-2">
+                                    {new Date(notification.createdAt).toLocaleDateString('pt-BR', {
+                                      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                              {!notification.read && (
+                                <button
+                                  onClick={() => markAsRead(notification.id)}
+                                  className="p-1 rounded-full hover:bg-green-100 transition-colors"
+                                  title="Marcar como lida"
+                                >
+                                  <Check className="text-green-600" size={16} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-              <span className="hidden sm:block font-medium">
-                {state.auth.user?.firstName || state.auth.user?.name || 'Usuário'}
-              </span>
-            </button>
+            </div>
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center space-x-2 p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              >
+                {state.auth.user?.avatar ? (
+                  <img
+                    src={state.auth.user.avatar}
+                    alt={state.auth.user.firstName || state.auth.user.name || 'Usuário'}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    {(state.auth.user?.firstName || state.auth.user?.name || 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="hidden sm:block font-medium">
+                  {state.auth.user?.firstName || state.auth.user?.name || 'Usuário'}
+                </span>
+              </button>
 
-            {/* User Dropdown */}
-            {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                <button
-                  onClick={() => {
-                    onSectionChange('settings');
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <User size={16} className="mr-3" />
-                  Configurações
-                </button>
-                <hr className="my-2" />
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <LogOut size={16} className="mr-3" />
-                  Sair
-                </button>
-              </div>
-            )}
+              {/* User Dropdown */}
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <button
+                    onClick={() => {
+                      onSectionChange('settings');
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <User size={16} className="mr-3" />
+                    Configurações
+                  </button>
+                  <hr className="my-2" />
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut size={16} className="mr-3" />
+                    Sair
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -137,7 +233,6 @@ export default function Layout({ children, currentSection, onSectionChange }: La
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentSection === item.id;
-                const hasNotifications = item.id === 'notifications' && unreadNotifications > 0;
 
                 return (
                   <button
@@ -151,26 +246,13 @@ export default function Layout({ children, currentSection, onSectionChange }: La
                   >
                     <Icon size={20} className={`${isSidebarCollapsed ? '' : 'mr-3'} flex-shrink-0`} />
                     {!isSidebarCollapsed && (
-                      <>
-                        <span className="truncate">{item.label}</span>
-                        {hasNotifications && (
-                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {unreadNotifications}
-                          </span>
-                        )}
-                      </>
-                    )}
-                    {isSidebarCollapsed && hasNotifications && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {unreadNotifications}
-                      </span>
+                      <span className="truncate">{item.label}</span>
                     )}
                     
                     {/* Tooltip for collapsed sidebar */}
                     {isSidebarCollapsed && (
                       <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
                         {item.label}
-                        {hasNotifications && ` (${unreadNotifications})`}
                       </div>
                     )}
                   </button>
@@ -235,7 +317,6 @@ export default function Layout({ children, currentSection, onSectionChange }: La
                   {menuItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = currentSection === item.id;
-                    const hasNotifications = item.id === 'notifications' && unreadNotifications > 0;
 
                     return (
                       <button
@@ -252,11 +333,6 @@ export default function Layout({ children, currentSection, onSectionChange }: La
                       >
                         <Icon size={20} className="mr-3" />
                         <span className="flex-1 text-left">{item.label}</span>
-                        {hasNotifications && (
-                          <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {unreadNotifications}
-                          </span>
-                        )}
                       </button>
                     );
                   })}
@@ -309,10 +385,13 @@ export default function Layout({ children, currentSection, onSectionChange }: La
       </div>
 
       {/* Close dropdowns when clicking outside */}
-      {showUserMenu && (
+      {(showUserMenu || showNotifications) && (
         <div
           className="fixed inset-0 z-30"
-          onClick={() => setShowUserMenu(false)}
+          onClick={() => {
+            setShowUserMenu(false)
+            setShowNotifications(false)
+          }}
         />
       )}
     </div>

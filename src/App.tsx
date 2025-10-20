@@ -13,7 +13,7 @@ import Notes from './components/Notes';
 import Photos from './components/Photos';
 import Notifications from './components/Notifications';
 import Settings from './components/SettingsComponent';
-import UpdatePassword from './components/UpdatePassword'; // Importe o novo componente
+import UpdatePassword from './components/UpdatePassword';
 
 /**
  * Componente principal da aplicação com roteamento por seções
