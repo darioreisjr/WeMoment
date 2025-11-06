@@ -170,6 +170,16 @@ src/
 - Temas personalizáveis e internacionalização.
 - Exportação/backup em nuvem dos dados do casal.
 
+## 🧪 Fluxo de Branches e CI/CD
+
+O projeto adota um fluxo baseado em três etapas para garantir estabilidade entre desenvolvimento e produção:
+
+1. **Branches de feature**: crie branches a partir de `development` (ex.: `feature/minha-melhoria`). Cada push ou Pull Request para `development` dispara o workflow [`CI - Branches de Desenvolvimento`](./.github/workflows/development-ci.yml), que executa lint e build.
+2. **Integração em `development`**: após a aprovação do PR, a branch de feature é mergeada em `development`. A pipeline garante que o código continue íntegro antes de preparar o release.
+3. **Promoção para `main`**: quando o código estiver pronto para produção, abra um PR de `development` para `main`. O merge dispara o workflow [`Release - Produção`](./.github/workflows/production-release.yml), que gera o artefato de build (`dist/`) pronto para deploy na plataforma desejada.
+
+> 💡 Configure proteções de branch no GitHub para exigir o sucesso das pipelines antes de permitir merges. Assim você garante que toda mudança passe por validações automáticas antes de chegar à produção.
+
 ## 🤝 Contribuição
 
 1. Faça um fork do projeto
