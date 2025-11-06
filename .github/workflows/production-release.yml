@@ -1,0 +1,51 @@
+name: Release - Produção
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-package:
+    name: Preparar build de produção
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Rodar lint
+        run: pnpm lint
+
+      - name: Gerar build
+        run: pnpm build
+
+      - name: Publicar artefato da build
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  notify:
+    name: Notificar sucesso da pipeline
+    needs: build-and-package
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    steps:
+      - name: Mensagem informativa
+        run: |
+          echo "Build de produção gerada com sucesso. Faça o deploy utilizando a artefato publicado ou integre com sua plataforma de hosting."
