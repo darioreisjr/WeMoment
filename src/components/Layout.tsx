@@ -26,6 +26,27 @@ interface LayoutProps {
   onSectionChange: (section: string) => void;
 }
 
+const getRelationshipPreposition = (userGender?: string, partnerGender?: string): string => {
+  if (!userGender || !partnerGender) return 'Com';
+
+  const userSex = userGender.toLowerCase();
+  const partnerSex = partnerGender.toLowerCase();
+
+  if (
+    (userSex === 'male' && partnerSex === 'female') ||
+    (userSex === 'female' && partnerSex === 'female')
+  ) {
+    return 'da';
+  } else if (
+    (userSex === 'female' && partnerSex === 'male') ||
+    (userSex === 'male' && partnerSex === 'male')
+  ) {
+    return 'do';
+  }
+
+  return 'Com';
+};
+
 export default function Layout({ children, currentSection, onSectionChange }: LayoutProps) {
   const { state, dispatch } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -282,9 +303,9 @@ export default function Layout({ children, currentSection, onSectionChange }: La
                     <div className="font-medium text-gray-900">
                       {state.auth.user?.firstName || state.auth.user?.name || 'Usuário'}
                     </div>
-                    <div className="text-gray-500">
-                      💕 Com {state.auth.partner?.firstName || state.auth.partner?.name || 'Parceiro(a)'}
-                    </div>
+                  <div className="text-gray-500">
+                    💕 {getRelationshipPreposition(state.auth.user?.gender, state.auth.partner?.gender)} {state.auth.partner?.firstName || state.auth.partner?.name || 'Parceiro(a)'}
+                  </div>
                   </div>
                 </div>
               </div>
@@ -361,7 +382,7 @@ export default function Layout({ children, currentSection, onSectionChange }: La
                           {state.auth.user?.firstName || state.auth.user?.name || 'Usuário'}
                         </div>
                         <div className="text-gray-500">
-                          💕 Com {state.auth.partner?.firstName || state.auth.partner?.name || 'Parceiro(a)'}
+                          💕 {getRelationshipPreposition(state.auth.user?.gender, state.auth.partner?.gender)} {state.auth.partner?.firstName || state.auth.partner?.name || 'Parceiro(a)'}
                         </div>
                       </div>
                     </div>
