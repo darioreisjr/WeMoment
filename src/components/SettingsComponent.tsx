@@ -13,7 +13,6 @@ import { useInviteCode } from '../hooks/useInviteCode';
 import { CoupleManagement } from './CoupleManagement';
 import { CoupleInformation } from './CoupleInformation';
 import { AccountInformation } from './AccountInformation';
-import { DangerZone } from './DangerZone';
 import { InviteModal } from './InviteModal';
 
 // Utils
@@ -256,13 +255,6 @@ export default function SettingsComponent() {
     setIsEditing(false);
   };
 
-  const handleClearAllData = () => {
-    if (window.confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
-      localStorage.removeItem('couples-app-data');
-      dispatch({ type: 'LOGOUT' });
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -320,8 +312,6 @@ export default function SettingsComponent() {
         notesCount={state.notes.length}
         photosCount={state.photos.length}
       />
-
-      <DangerZone onClearAllData={handleClearAllData} />
 
       <InviteModal
         isOpen={showInviteModal}
