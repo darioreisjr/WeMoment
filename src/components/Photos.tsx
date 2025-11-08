@@ -210,6 +210,21 @@ export default function Photos() {
     return 'Desconhecido';
   };
 
+  const handleNavigation = (direction: 'prev' | 'next') => {
+    if (!selectedPhoto) return;
+    const currentIndex = filteredPhotos.findIndex(p => p.id === selectedPhoto.id);
+    if (currentIndex === -1) return;
+
+    let nextIndex;
+    if (direction === 'next') {
+      nextIndex = (currentIndex + 1) % filteredPhotos.length;
+    } else {
+      nextIndex = (currentIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
+    }
+    
+    setSelectedPhoto(filteredPhotos[nextIndex]);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -268,6 +283,30 @@ export default function Photos() {
               <X size={24} />
             </button>
             
+            {/* Botão de Navegação - Anterior */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNavigation('prev');
+              }}
+              className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 z-20 p-2 bg-black bg-opacity-30 text-white rounded-full hover:bg-opacity-50 transition-all"
+              title="Foto anterior"
+            >
+              <ChevronLeft size={28} />
+            </button>
+
+            {/* Botão de Navegação - Próxima */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNavigation('next');
+              }}
+              className="absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 z-20 p-2 bg-black bg-opacity-30 text-white rounded-full hover:bg-opacity-50 transition-all"
+              title="Próxima foto"
+            >
+              <ChevronRight size={28} />
+            </button>
+
             <div className="bg-white rounded-lg overflow-hidden shadow-2xl max-h-full">
               <div className="relative">
                 <img
